@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Patient Reports') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a href="{{ url_for('doctor.doctor_dashboard') }}" class="text-blue-700 hover:text-gray-300 mr-4">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-user-circle text-blue-600 mr-3"></i>{{ gettext('Patient Reports') }}
+                </h1>
+                <p class="text-gray-500 text-sm mt-1">
+                    {{ gettext('View and manage all medical reports and prescriptions') }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Info Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-5 mb-6">
+        <div class="flex flex-wrap justify-between items-center">
+            <div class="flex items-center">
+                <div class="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                    <i class="fas fa-user text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h2 class="text-xl font-bold text-gray-800">{{ patient.name }}</h2>
+                    <div class="flex flex-wrap gap-3 mt-1 text-sm text-gray-600">
+                        <span><i class="fas fa-calendar-alt text-blue-500 mr-1"></i>{{ gettext('Age') }}: {{ patient.age
+                            if patient.age else '-' }}</span>
+                        <span><i class="fas fa-phone text-blue-500 mr-1"></i>{{ gettext('Phone') }}: {{ patient.phone or
+                            '-' }}</span>
+                        <span><i class="fas fa-id-card text-blue-500 mr-1"></i>{{ gettext('SSN') }}: {{ patient.ssn or
+                            '-' }}</span>
+                        <span><i class="fas fa-envelope text-blue-500 mr-1"></i>{{ gettext('Email') }}: {{ patient.email
+                            or '-' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-3 md:mt-0">
+                <a href="{{ url_for('doctor.edit_patient', patient_id=patient.id) }}"
+                    class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                    <i class="fas fa-edit mr-2"></i>{{ gettext('Edit') }}
+                </a>
+                <a href="{{ url_for('doctor.analyze_patient_report', patient_id=patient.id) }}"
+                    class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
+                    <i class="fas fa-microscope mr-2"></i>{{ gettext('New Analysis') }}
+                </a>
+                {% if session.get('user_role') == 'doctor' %}
+                <a href="{{ url_for('doctor.add_prescription', patient_id=patient.id) }}"
+                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+                    <i class="fas fa-prescription-bottle mr-2"></i>{{ gettext('Add Rx') }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Reports Section -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
+            <h2 class="text-white font-semibold">
+                <i class="fas fa-file-alt mr-2"></i>{{ gettext('Medical Reports History') }}
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-sm font-semibold text-gray-600">
+                            <i class="fas fa-calendar-alt mr-1 text-blue-500"></i>{{ gettext('Date') }}
+                        </th>
+                        <th class="px-5 py-3 text-left text-sm font-semibold text-gray-600">
+                            <i class="fas fa-stethoscope mr-1 text-blue-500"></i>{{ gettext('Conditions') }}
+                        </th>
+                        <th class="px-5 py-3 text-left text-sm font-semibold text-gray-600">
+                            <i class="fas fa-pills mr-1 text-blue-500"></i>{{ gettext('Medications') }}
+                        </th>
+                        <th class="px-5 py-3 text-left text-sm font-semibold text-gray-600">
+                            <i class="fas fa-exclamation-triangle mr-1 text-blue-500"></i>{{ gettext('Alerts') }}
+                        </th>
+                        <th class="px-5 py-3 text-left text-sm font-semibold text-gray-600">
+                            <i class="fas fa-align-left mr-1 text-blue-500"></i>{{ gettext('Summary') }}
+                        </th>
+                        <th class="px-5 py-3 text-center text-sm font-semibold text-gray-600">
+                            <i class="fas fa-cog mr-1 text-blue-500"></i>{{ gettext('Actions') }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for report in reports %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-5 py-3 text-gray-700 whitespace-nowrap">
+                            {{ report.report_date.strftime('%d/%m/%Y') }}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% set conditions = report.get_conditions() %}
+                            {% if conditions %}
+                            <ul class="list-disc list-inside text-sm text-gray-700">
+                                {% for condition in conditions[:3] %}
+                                <li>{{ condition }}</li>
+                                {% endfor %}
+                                {% if conditions|length > 3 %}
+                                <li class="text-gray-400">+{{ conditions|length - 3 }} more</li>
+                                {% endif %}
+                            </ul>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% set medications = report.get_medications() %}
+                            {% if medications %}
+                            <ul class="list-disc list-inside text-sm text-gray-700">
+                                {% for med in medications[:3] %}
+                                <li>{{ med }}</li>
+                                {% endfor %}
+                                {% if medications|length > 3 %}
+                                <li class="text-gray-400">+{{ medications|length - 3 }} more</li>
+                                {% endif %}
+                            </ul>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% set alerts = report.get_alerts() %}
+                            {% if alerts %}
+                            <ul class="list-disc list-inside text-sm text-yellow-700">
+                                {% for alert in alerts[:2] %}
+                                <li><i class="fas fa-exclamation-circle mr-1"></i>{{ alert }}</li>
+                                {% endfor %}
+                                {% if alerts|length > 2 %}
+                                <li class="text-gray-400">+{{ alerts|length - 2 }} more</li>
+                                {% endif %}
+                            </ul>
+                            {% else %}
+                            <span class="text-green-600"><i class="fas fa-check-circle"></i> {{ gettext('None')
+                                }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-sm text-gray-600 max-w-xs">
+                            {{ report.summary[:100] }}{% if report.summary and report.summary|length > 100 %}...{% endif
+                            %}
+                        </td>
+                        <td class="px-5 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="viewReport({{ report.id }})"
+                                    class="text-blue-600 hover:text-blue-800 transition"
+                                    title="{{ gettext('View Details') }}">
+                                    <i class="fas fa-eye text-lg"></i>
+                                </button>
+                                <form method="POST" action="{{ url_for('report.delete_report', report_id=report.id) }}"
+                                    onsubmit="return confirm('{{ gettext('Are you sure you want to delete this report?') }}')"
+                                    class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 transition"
+                                        title="{{ gettext('Delete') }}">
+                                        <i class="fas fa-trash-alt text-lg"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-gray-400">
+                            <i class="fas fa-file-alt fa-3x mb-3 text-gray-300"></i>
+                            <p>{{ gettext('No medical reports found') }}</p>
+                            <a href="{{ url_for('doctor.analyze_patient_report', patient_id=patient.id) }}"
+                                class="text-blue-600 hover:underline mt-2 inline-block">
+                                <i class="fas fa-microscope mr-1"></i>{{ gettext('Start first analysis') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Prescriptions Section -->
+    {% if session.get('user_role') == 'doctor' %}
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3">
+            <h2 class="text-white font-semibold">
+                <i class="fas fa-prescription-bottle mr-2"></i>{{ gettext('Recent Prescriptions') }}
+            </h2>
+        </div>
+
+        <div class="p-5">
+            {% if prescriptions %}
+            <div class="space-y-3">
+                {% for prescription in prescriptions %}
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-file-prescription text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800">
+                                {{ gettext('Prescription') }} #{{ prescription.id }}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-calendar-alt mr-1"></i>{{ prescription.created_at.strftime('%d/%m/%Y')
+                                }}
+                                {% if prescription.diagnosis %}
+                                | <i class="fas fa-stethoscope mr-1"></i>{{ prescription.diagnosis[:50] }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="{{ url_for('prescription.view_prescription', prescription_id=prescription.id) }}"
+                            class="text-blue-600 hover:text-blue-800 transition" title="{{ gettext('View') }}">
+                            <i class="fas fa-eye text-lg"></i>
+                        </a>
+                        <!-- في قسم Prescriptions Section، قم بتعديل رابط الطباعة -->
+                        <a href="javascript:void(0)" onclick="printPrescription({{ prescription.id }})"
+                            class="text-gray-600 hover:text-gray-800 transition" title="{{ gettext('Print') }}">
+                            <i class="fas fa-print text-lg"></i>
+                        </a>
+                        {% if prescription.is_active %}
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
+                            <i class="fas fa-check-circle"></i> {{ gettext('Active') }}
+                        </span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-500 px-2 py-1 rounded-full text-xs">
+                            <i class="fas fa-clock"></i> {{ gettext('Expired') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-400">
+                <i class="fas fa-prescription-bottle fa-3x mb-3 text-gray-300"></i>
+                <p>{{ gettext('No prescriptions found') }}</p>
+                {% if session.get('user_role') == 'doctor' %}
+                <a href="{{ url_for('doctor.add_prescription', patient_id=patient.id) }}"
+                    class="text-purple-600 hover:underline mt-2 inline-block">
+                    <i class="fas fa-plus mr-1"></i>{{ gettext('Add first prescription') }}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Add Prescription Button -->
+    <div class="mt-6 text-center">
+        <a href="{{ url_for('doctor.add_prescription', patient_id=patient.id) }}"
+            class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            <i class="fas fa-plus-circle mr-2"></i>{{ gettext('Add New Prescription') }}
+        </a>
+    </div>
+</div>
+{% endif %}
+<!-- Report View Modal -->
+<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+    style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+            class="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3 flex justify-between items-center">
+            <h3 class="text-white font-semibold">
+                <i class="fas fa-file-alt mr-2"></i>{{ gettext('Report Details') }}
+            </h3>
+            <button onclick="closeModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="modalContent" class="p-5">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // View Report function
+    // View Report function
+    // View Report function
+    async function viewReport(reportId) {
+        const modal = document.getElementById('reportModal');
+        const modalContent = document.getElementById('modalContent');
+
+        modal.style.display = 'flex';
+        modalContent.innerHTML = '<div class="text-center py-8"><div class="loader mx-auto"></div><p class="mt-3">{{ gettext("Loading...") }}</p></div>';
+
+        try {
+            const response = await fetch(`/report/${reportId}/export`);
+            const report = await response.json();
+
+            const conditionsList = report.conditions?.length > 0
+                ? `<ul class="list-disc list-inside">${report.conditions.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">-</span>';
+
+            const medicationsList = report.medications?.length > 0
+                ? `<ul class="list-disc list-inside">${report.medications.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">-</span>';
+
+            const alertsList = report.alerts?.length > 0
+                ? `<ul class="list-disc list-inside">${report.alerts.map(a => `<li class="text-yellow-700">⚠️ ${escapeHtml(a)}</li>`).join('')}</ul>`
+                : '<span class="text-green-600">✓ {{ gettext("No alerts") }}</span>';
+
+            // ✅ جلب مسارات الصور
+            let imagePaths = [];
+            if (report.image_paths) {
+                try {
+                    imagePaths = typeof report.image_paths === 'string'
+                        ? JSON.parse(report.image_paths)
+                        : report.image_paths;
+                    console.log('Image paths:', imagePaths); // للتحقق
+                } catch (e) {
+                    console.error('Error parsing image paths:', e);
+                }
+            }
+
+            // ✅ إنشاء HTML لعرض الصور مع المسار الصحيح
+            let imagesHtml = '';
+            if (imagePaths.length > 0) {
+                imagesHtml = `
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-2">
+                    <i class="fas fa-images text-blue-500 mr-2"></i>{{ gettext('Report Images') }}
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    ${imagePaths.map(path => `
+                        <div class="relative group cursor-pointer" onclick="openImageModal('${escapeHtml(path)}')">
+                            <img src="/report/uploads/${escapeHtml(path)}" alt="Report image" 
+                                    class="w-full h-32 object-cover rounded-lg border hover:shadow-lg transition"
+                                    onerror="this.src='/static/images/no-image.png'">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white text-xl opacity-0 group-hover:opacity-100 transition"></i>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+            }
+
+            modalContent.innerHTML = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3 pb-3 border-b">
+                <div>
+                    <p class="text-sm text-gray-500">{{ gettext('Report ID') }}</p>
+                    <p class="font-medium">#${report.id}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">{{ gettext('Date') }}</p>
+                    <p class="font-medium">${new Date(report.report_date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">{{ gettext('Doctor ID') }}</p>
+                    <p class="font-medium">${report.doctor_id || '-'}</p>
+                </div>
+            </div>
+            
+            ${imagesHtml}
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-stethoscope text-blue-500 mr-2"></i>{{ gettext('Conditions') }}</h4>
+                <div class="bg-blue-50 p-3 rounded-lg">${conditionsList}</div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-pills text-blue-500 mr-2"></i>{{ gettext('Medications') }}</h4>
+                <div class="bg-green-50 p-3 rounded-lg">${medicationsList}</div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-exclamation-triangle text-blue-500 mr-2"></i>{{ gettext('Alerts') }}</h4>
+                <div class="bg-yellow-50 p-3 rounded-lg">${alertsList}</div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-2"><i class="fas fa-align-left text-blue-500 mr-2"></i>{{ gettext('Summary') }}</h4>
+                <div class="bg-gray-50 p-3 rounded-lg">${escapeHtml(report.summary) || '-'}</div>
+            </div>
+            
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                    {{ gettext('Close') }}
+                </button>
+                <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-print mr-2"></i>{{ gettext('Print') }}
+                </button>
+            </div>
+        </div>
+    `;
+        } catch (error) {
+            console.error('Error loading report:', error);
+            modalContent.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>{{ gettext("Error loading report details") }}</p></div>';
+        }
+    }
+    // Image Modal for fullscreen view
+    let fullscreenModal = null;
+
+    // دالة عرض الصورة في المودال المنبثق
+    function openImageModal(imagePath) {
+        if (!fullscreenModal) {
+            fullscreenModal = document.createElement('div');
+            fullscreenModal.id = 'fullscreenImageModal';
+            fullscreenModal.className = 'fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-[60]';
+            fullscreenModal.onclick = () => closeFullscreenModal();
+            fullscreenModal.innerHTML = `
+        <div class="relative max-w-5xl max-h-[90vh] p-4">
+            <img id="fullscreenImage" src="" alt="Fullscreen image" class="max-w-full max-h-[90vh] object-contain mx-auto">
+            <button onclick="closeFullscreenModal()" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300">&times;</button>
+        </div>
+    `;
+            document.body.appendChild(fullscreenModal);
+        }
+
+        const img = fullscreenModal.querySelector('#fullscreenImage');
+        img.src = `/report/uploads/${escapeHtml(imagePath)}`;
+        fullscreenModal.style.display = 'flex';
+    }
+
+    function closeFullscreenModal() {
+        if (fullscreenModal) {
+            fullscreenModal.style.display = 'none';
+        }
+    }
+
+
+    function closeModal() {
+        const modal = document.getElementById('reportModal');
+        modal.style.display = 'none';
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('reportModal')?.addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // ==================== PRINT PRESCRIPTION FUNCTION ====================
+    function printPrescription(prescriptionId) {
+        // فتح نافذة جديدة لعرض الوصفة ثم طباعتها مباشرة
+        const printWindow = window.open(`/prescription/${prescriptionId}/view`, '_blank');
+
+        // انتظر حتى تحميل الصفحة ثم اطبع
+        printWindow.onload = function () {
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        };
+    }
+</script>
+
+<style>
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}

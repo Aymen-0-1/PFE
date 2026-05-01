@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Home') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-4">
+
+    <div class="bg-gradient-to-r from-blue-600 to-teal-500 rounded-xl text-white mb-4 overflow-hidden">
+        <div class="px-6 py-6 text-center">
+            <i class="fas fa-stethoscope text-3xl mb-2"></i>
+            <h1 class="text-3xl font-bold mb-1">{{ gettext('AI-Powered Medical Report Analyzer') }}</h1>
+            <p class="text-sm mb-3 max-w-xl mx-auto">
+                {{ gettext('Upload your medical reports and get instant AI-powered analysis in seconds') }}
+            </p>
+            {% if not current_user.is_authenticated %}
+            <div class="flex justify-center space-x-3">
+                <a href="{{ url_for('auth.login') }}"
+                    class="bg-white text-blue-600 px-4 py-1.5 rounded-lg font-semibold text-sm hover:bg-gray-100">
+                    {{ gettext('Login') }}
+                </a>
+                <a href="{{ url_for('auth.register') }}"
+                    class="border-2 border-white text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:bg-white hover:text-blue-600">
+                    {{ gettext('Register') }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow mb-4">
+        <div class="border-b px-4 py-2">
+            <h2 class="text-md font-bold flex items-center">
+                <i class="fas fa-flask text-blue-600 mr-2 text-xl"></i>
+                {{ gettext('Quick Analysis') }}
+                <span class="ml-2 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">{{ gettext('Free')
+                    }}</span>
+            </h2>
+            <p class="text-gray-500 text-xs">{{ gettext('Try our AI analysis for free - No login required') }}</p>
+        </div>
+
+        <div class="p-4">
+            <form id="quickAnalysisForm">
+                <div id="dropzone"
+                    class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition bg-gray-50">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-sm text-gray-600">{{ gettext('Drag & Drop your medical images here') }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ gettext('PNG, JPG, JPEG, GIF (Multiple images allowed)') }}
+                    </p>
+                    <input type="file" id="quickReportImage" name="files" multiple accept="image/*" class="hidden">
+                    <button type="button" id="selectFilesBtn"
+                        class="mt-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700">
+                        <i class="fas fa-folder-open text-sm"></i> {{ gettext('Select Files') }}
+                    </button>
+                </div>
+
+                <div id="imagePreview" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+
+                <div id="analysisStatus" class="hidden status-message mb-3 p-2 rounded-lg text-sm"></div>
+                <div id="analysisResult" class="hidden"></div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" id="analyzeBtn" disabled
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <i class="fas fa-microscope text-xs"></i> {{ gettext('Analyze Reports') }}
+                    </button>
+                </div>
+
+                <div id="loading" class="hidden text-center mt-4">
+                    <div class="loader mx-auto"></div>
+                    <p class="mt-2 text-xs text-gray-600">{{ gettext('AI is analyzing your medical documents...') }}</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Analysis Results - مصغر -->
+    <div id="resultsSection" class="hidden bg-white rounded-lg shadow mb-4">
+        <div class="border-b px-4 py-2">
+            <h2 class="text-md font-bold flex items-center">
+                <i class="fas fa-chart-bar text-blue-600 mr-2 text-sm"></i>
+                {{ gettext('Analysis Results') }}
+            </h2>
+        </div>
+        <div class="p-3 overflow-x-auto max-h-56">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-2 py-1 text-left">{{ gettext('Date') }}</th>
+                        <th class="px-2 py-1 text-left">{{ gettext('Conditions') }}</th>
+                        <th class="px-2 py-1 text-left">{{ gettext('Medications') }}</th>
+                        <th class="px-2 py-1 text-left">{{ gettext('Alerts') }}</th>
+                        <th class="px-2 py-1 text-left">{{ gettext('Summary') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody">
+                    <tr>
+                        <td colspan="5" class="px-2 py-4 text-center text-gray-400 text-xs">
+                            {{ gettext('Upload images to see analysis results') }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="border-t px-4 py-2 bg-gray-50 text-center text-xs">
+            <i class="fas fa-info-circle text-xs"></i>
+            {{ gettext('Create an account to save and manage your reports.') }}
+            <a href="{{ url_for('auth.register') }}" class="text-blue-600 hover:underline">{{ gettext('Register Now')
+                }}</a>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .loader {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3b82f6;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    #imagePreview img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+</style>
+
+<script>
+    // ===== دالة تحليل التقارير المبسطة =====
+    async function analyzeReports(imageFiles, patientId = null) {
+        const status = document.getElementById("analysisStatus");
+        const resultBox = document.getElementById("analysisResult");
+        const loading = document.getElementById("loading");
+        const resultsSection = document.getElementById("resultsSection");
+
+        if (!imageFiles?.length) {
+            alert("Please select at least one file");
+            return;
+        }
+
+        // إظهار حالة التحميل
+        status.style.display = "block";
+        status.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
+        status.className = "status-message info";
+        if (resultBox) resultBox.style.display = "none";
+        if (loading) loading.classList.remove("hidden");
+        if (resultsSection) resultsSection.classList.add("hidden");
+
+        let allText = "";
+        let successCount = 0;
+        let imagePaths = [];
+
+        // معالجة كل صورة
+        for (let i = 0; i < imageFiles.length; i++) {
+            const file = imageFiles[i];
+            status.textContent = `📤 Processing ${i + 1}/${imageFiles.length}: ${file.name}`;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("/ocr", { method: "POST", body: formData });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                allText += `\n--- Image ${i + 1} ---\n${data.text}\n`;
+                if (data.image_path) imagePaths.push(data.image_path);
+                successCount++;
+            } catch (error) {
+                console.error(`Error: ${file.name}`, error);
+            }
+        }
+
+        if (successCount === 0) {
+            status.innerHTML = "❌ No text could be extracted. Please ensure images are clear.";
+            status.className = "status-message error";
+            if (loading) loading.classList.add("hidden");
+            return;
+        }
+
+        // تحليل AI
+        status.textContent = `🔍 AI analyzing ${successCount} image(s)...`;
+
+        const prompt = `Extract medical info from this report. Return ONLY valid JSON:
+{
+    "conditions": [],
+    "medications": [],
+    "alerts": [],
+    "summary": ""
+}
+
+Text: ${allText.substring(0, 3000)}`;
+
+        try {
+            const aiResponse = await puter.ai.chat(prompt);
+
+            // استخراج JSON من الرد
+            let content = typeof aiResponse === 'string' ? aiResponse : (aiResponse.content || aiResponse.message?.content || JSON.stringify(aiResponse));
+            let cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            let analysis = JSON.parse(cleanContent);
+
+            // التأكد من وجود الحقول
+            analysis.conditions = analysis.conditions || [];
+            analysis.medications = analysis.medications || [];
+            analysis.alerts = analysis.alerts || [];
+            analysis.summary = analysis.summary || "Analysis complete";
+
+            // عرض النتائج في الجدول
+            const tableBody = document.getElementById("resultTableBody");
+            if (tableBody) {
+                const date = new Date().toLocaleDateString();
+                tableBody.innerHTML = `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-3">${date}</td>
+                    <td class="px-4 py-3">${analysis.conditions.map(c => `• ${escape(c)}`).join('<br>') || '-'}</td>
+                    <td class="px-4 py-3">${analysis.medications.map(m => `• ${escape(m)}`).join('<br>') || '-'}</td>
+                    <td class="px-4 py-3">${analysis.alerts.map(a => `⚠️ ${escape(a)}`).join('<br>') || '-'}</td>
+                    <td class="px-4 py-3">${escape(analysis.summary)}</td>
+                </tr>
+            `;
+            }
+
+            // حفظ للمستخدمين المسجلين فقط
+            if (patientId && imagePaths.length) {
+                await fetch("/report/save-report", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        patient_id: patientId,
+                        image_paths: imagePaths,
+                        conditions: analysis.conditions,
+                        medications: analysis.medications,
+                        alerts: analysis.alerts,
+                        summary: analysis.summary
+                    })
+                });
+            }
+
+            // إظهار النتائج
+            status.innerHTML = "✅ Analysis complete!";
+            status.className = "status-message success";
+            if (resultBox) resultBox.style.display = "block";
+            if (resultsSection) resultsSection.classList.remove("hidden");
+
+        } catch (error) {
+            console.error(error);
+            status.innerHTML = "❌ Analysis failed. Please try again.";
+            status.className = "status-message error";
+        } finally {
+            if (loading) loading.classList.add("hidden");
+            setTimeout(() => { if (status) status.style.display = "none"; }, 3000);
+        }
+    }
+
+    function escape(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ===== ربط النموذج =====
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("quickAnalysisForm");
+        const fileInput = document.getElementById("quickReportImage");
+        const preview = document.getElementById("imagePreview");
+        const analyzeBtn = document.getElementById("analyzeBtn");
+
+        let selectedFiles = [];
+
+        // اختيار الملفات
+        document.getElementById("selectFilesBtn")?.addEventListener("click", () => fileInput.click());
+
+        // السحب والإفلات
+        const dropzone = document.getElementById("dropzone");
+        if (dropzone) {
+            dropzone.addEventListener("click", () => fileInput.click());
+            dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("border-blue-500", "bg-blue-50"); });
+            dropzone.addEventListener("dragleave", () => dropzone.classList.remove("border-blue-500", "bg-blue-50"));
+            dropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropzone.classList.remove("border-blue-500", "bg-blue-50");
+                handleFiles(Array.from(e.dataTransfer.files));
+            });
+        }
+
+        fileInput?.addEventListener("change", (e) => handleFiles(Array.from(e.target.files)));
+
+        function handleFiles(files) {
+            for (const file of files) {
+                if (!file.type.startsWith("image/")) continue;
+                selectedFiles.push(file);
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement("div");
+                    div.className = "relative";
+                    div.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg">
+                    <button type="button" onclick="this.parentElement.remove(); removeFile('${file.name}')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs">×</button>
+                `;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+            analyzeBtn.disabled = selectedFiles.length === 0;
+            updateFileInput();
+        }
+
+        window.removeFile = (name) => {
+            selectedFiles = selectedFiles.filter(f => f.name !== name);
+            analyzeBtn.disabled = selectedFiles.length === 0;
+            updateFileInput();
+        };
+
+        function updateFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            fileInput.files = dt.files;
+        }
+
+        // إرسال النموذج
+        form?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            if (selectedFiles.length) analyzeReports(selectedFiles, null);
+            else alert("Please select images");
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,819 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('New Prescription') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a href="{{ url_for('doctor.patient_reports', patient_id=patient.id) }}"
+                class="text-gray-500 hover:text-gray-700 mr-4">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-prescription-bottle text-blue-600 mr-3"></i>{{ gettext('New Prescription') }}
+            </h1>
+        </div>
+        <div class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg">
+            <i class="fas fa-user mr-2"></i>{{ gettext('Patient') }}: {{ patient.name }}
+        </div>
+    </div>
+
+    <!-- Patient Info Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 mb-6">
+        <div class="flex flex-wrap justify-between items-center">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                    <i class="fas fa-user text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-500">{{ gettext('Patient Information') }}</p>
+                    <p class="font-medium">{{ patient.name }} | {{ gettext('Age') }}: {{ patient.age if patient.age else
+                        '-' }} | {{ gettext('Phone') }}: {{ patient.phone or '-' }}</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="fas fa-calendar-alt mr-1"></i>{{ gettext('Date') }}: {{ datetime.now().strftime('%d/%m/%Y') }}
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" id="prescriptionForm">
+        <!-- Diagnosis & Notes -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-stethoscope mr-2"></i>{{ gettext('Diagnosis & Notes') }}
+                </h2>
+            </div>
+            <div class="p-5">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-diagnoses text-blue-500 mr-2"></i>{{ gettext('Diagnosis') }}
+                    </label>
+                    <textarea name="diagnosis" id="diagnosis" rows="2"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="{{ gettext('Enter diagnosis here (max 10 words)...') }}" maxlength="60">{% 
+            if patient_reports and patient_reports|length > 0 
+            %}{% 
+                set conditions_list = [] 
+            %}{% 
+                for condition in patient_reports[0].get_conditions() 
+            %}{% 
+                if condition is string 
+            %}{% 
+                set _ = conditions_list.append(condition) 
+            %}{% 
+                else 
+            %}{% 
+                set _ = conditions_list.append(condition.name) 
+            %}{% 
+                endif 
+            %}{% 
+                endfor 
+            %}{% 
+                set full_text = conditions_list|join(', ') 
+            %}{% 
+                set truncated = full_text.split()[:10]|join(' ') 
+            %}{{ truncated }}{% 
+            endif 
+        %}</textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-notes-medical text-blue-500 mr-2"></i>{{ gettext('Additional Notes') }}
+                    </label>
+                    <textarea name="notes" id="notes" rows="2"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="{{ gettext('Additional instructions for the patient...') }}"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medications Table -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-table-list mr-2"></i>{{ gettext('Prescribed Medications') }}
+                </h2>
+            </div>
+            <div class="p-5">
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">{{
+                                    gettext('Medication') }}</th>
+                                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">{{ gettext('Dosage')
+                                    }}</th>
+                                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">{{
+                                    gettext('Frequency') }}</th>
+                                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">{{
+                                    gettext('Duration') }}</th>
+                                <th class="px-3 py-2 text-left text-sm font-semibold text-gray-700">{{
+                                    gettext('Instructions') }}</th>
+                                <th class="px-3 py-2 text-center text-sm font-semibold text-gray-700">{{
+                                    gettext('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medicationsList">
+                            <tr class="medication-row border-b hover:bg-gray-50">
+                                <td class="px-3 py-2">
+                                    <select name="medicine_id[]"
+                                        class="medicine-select w-full px-2 py-1 border rounded-lg" required>
+                                        <option value="">-- {{ gettext('Select medicine') }} --</option>
+                                        {% for medicine in medicines %}
+                                        <option value="{{ medicine.id }}" data-dosages="{{ medicine.common_dosages }}">
+                                            {{ medicine.commercial_name }} ({{ medicine.scientific_name }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select name="dosage[]" class="dosage-select w-full px-2 py-1 border rounded-lg"
+                                        required>
+                                        <option value="">{{ gettext('-- ') }}</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select name="frequency[]"
+                                        class="frequency-select w-full px-2 py-1 border rounded-lg">
+                                        <option value="">{{ gettext('--') }}</option>
+                                        <option value="Once daily">{{ gettext('Once daily') }}</option>
+                                        <option value="Twice daily">{{ gettext('Twice daily') }}</option>
+                                        <option value="Three times daily">{{ gettext('Three times daily') }}</option>
+                                        <option value="Four times daily">{{ gettext('Four times daily') }}</option>
+                                        <option value="Every 8 hours">{{ gettext('Every 8 hours') }}</option>
+                                        <option value="Every 12 hours">{{ gettext('Every 12 hours') }}</option>
+                                        <option value="As needed">{{ gettext('As needed') }}</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select name="duration[]"
+                                        class="duration-select w-full px-2 py-1 border rounded-lg">
+                                        <option value="">{{ gettext('-- ') }}</option>
+                                        <option value="3 days">3 {{ gettext('days') }}</option>
+                                        <option value="5 days">5 {{ gettext('days') }}</option>
+                                        <option value="7 days">7 {{ gettext('days') }}</option>
+                                        <option value="10 days">10 {{ gettext('days') }}</option>
+                                        <option value="14 days">14 {{ gettext('days') }}</option>
+                                        <option value="21 days">21 {{ gettext('days') }}</option>
+                                        <option value="30 days">30 {{ gettext('days') }}</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <input type="text" name="instructions[]" class="w-full px-2 py-1 border rounded-lg"
+                                        placeholder="{{ gettext('e.g., Before meals') }}">
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <button type="button" class="text-red-500 hover:text-red-700"
+                                        onclick="removeMedicine(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="button" onclick="addMedicine()" class="mt-4 text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-plus-circle mr-1"></i> {{ gettext('Add Medication') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- AI Interactions Alert -->
+        <div id="aiAlerts" class="bg-white rounded-xl shadow-md overflow-hidden mb-6" style="display: none;">
+            <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-robot mr-2"></i>{{ gettext('AI Drug Interaction Analysis') }}
+                </h2>
+            </div>
+            <div id="aiAlertsContent" class="p-5"></div>
+        </div>
+
+        <!-- Dosage Analysis -->
+        <div id="dosageAnalysis" class="bg-white rounded-xl shadow-md overflow-hidden mb-6" style="display: none;">
+            <div class="bg-gradient-to-r from-green-600 to-teal-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-chart-line mr-2"></i>{{ gettext('Dosage Analysis') }}
+                </h2>
+            </div>
+            <div class="p-5">
+                <div id="dosageSummary"></div>
+                <div class="overflow-x-auto mt-3">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2">{{ gettext('Active Ingredient') }}</th>
+                                <th class="px-3 py-2">{{ gettext('Daily Dose') }}</th>
+                                <th class="px-3 py-2">{{ gettext('Safe Limit') }}</th>
+                                <th class="px-3 py-2">{{ gettext('Status') }}</th>
+                                <th class="px-3 py-2">{{ gettext('Warning') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dosageTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-gray-400">{{ gettext('Select medications to
+                                    analyze') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end gap-3">
+            <a href="{{ url_for('doctor.patient_reports', patient_id=patient.id) }}"
+                class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-times mr-2"></i>{{ gettext('Cancel') }}
+            </a>
+            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-save mr-2"></i>{{ gettext('Save Prescription') }}
+            </button>
+        </div>
+    </form>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/puter-js@latest/dist/puter.js"></script>
+<script>
+    /**
+     * ============================================================================
+     * AI-Powered Medic - Prescription Analysis Module
+     * ============================================================================
+     * Version: 1.0
+     * Description: Handles AI-powered drug interaction and dosage analysis
+     * Dependencies: Puter AI, Font Awesome, Tailwind CSS
+     * ============================================================================
+     */
+
+    // ============================================================================
+    // SECTION 1: DOM Elements Cache
+    // ============================================================================
+    const DOM = {
+        get alertsContainer() { return document.getElementById('aiAlerts'); },
+        get alertsContent() { return document.getElementById('aiAlertsContent'); },
+        get dosageContainer() { return document.getElementById('dosageAnalysis'); },
+        get dosageTableBody() { return document.getElementById('dosageTableBody'); },
+        get dosageSummary() { return document.getElementById('dosageSummary'); },
+        get medicationsList() { return document.getElementById('medicationsList'); }
+    };
+
+    // ============================================================================
+    // SECTION 2: Utility Functions
+    // ============================================================================
+
+    /**
+     * Escape HTML to prevent XSS attacks
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped HTML
+     */
+    // use window.escapeHtml from base.js
+
+    /**
+     * Show loading state in UI
+     */
+    function showLoadingState() {
+        if (DOM.alertsContainer) {
+            DOM.alertsContainer.style.display = 'block';
+            DOM.alertsContent.innerHTML = `
+        <div class="text-center py-6">
+            <i class="fas fa-circle-notch fa-spin text-blue-500 text-3xl mb-3"></i>
+            <p class="text-gray-600">🤖 AI is analyzing the prescription...</p>
+            <p class="text-gray-400 text-sm mt-1">Please wait a moment</p>
+        </div>
+    `;
+        }
+
+        if (DOM.dosageContainer) {
+            DOM.dosageContainer.style.display = 'block';
+            DOM.dosageTableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center py-6">
+                <i class="fas fa-spinner fa-pulse text-green-500 text-2xl"></i>
+                <p class="text-gray-400 text-sm mt-2">Calculating...</p>
+            </td>
+        </tr>
+    `;
+        }
+    }
+
+    /**
+     * Hide analysis containers
+     */
+    function hideAnalysisContainers() {
+        if (DOM.alertsContainer) DOM.alertsContainer.style.display = 'none';
+        if (DOM.dosageContainer) DOM.dosageContainer.style.display = 'none';
+    }
+
+    // ============================================================================
+    // SECTION 3: Fallback Analysis (No AI)
+    // ============================================================================
+
+    /**
+     * Generate fallback analysis when AI fails
+     * @param {Array} medicationsInfo - List of medications
+     * @param {Object} patient - Patient information
+     * @returns {Object} Analysis result
+     */
+    function generateSafeFallbackAnalysis(medicationsInfo, patient) {
+        const age = patient.age || 0;
+        const isElderly = age >= 65;
+        const isChild = age < 18;
+        const allergies = (patient.allergies || '').toLowerCase();
+
+        const medications = medicationsInfo.map(med => {
+            let recommended_dosage = med.requested_dosage || 'Standard dose';
+            let age_advice = null;
+            let allergy_alert = null;
+
+            if (isElderly) {
+                recommended_dosage = med.requested_dosage ?
+                    `Consider 50% reduction: ${med.requested_dosage}` :
+                    'Start with lowest possible dose';
+                age_advice = '⚠️ Elderly patient (65+) - reduce dose by 50%';
+            } else if (isChild) {
+                age_advice = '⚠️ Child patient - adjust dose based on weight (2mg/kg)';
+            }
+
+            const medName = med.name.toLowerCase();
+            if (allergies.includes('penicillin') && medName.includes('cillin')) {
+                allergy_alert = '🔴 ALLERGY: Penicillin! DO NOT PRESCRIBE!';
+            } else if (allergies.includes('aspirin') && medName.includes('aspirin')) {
+                allergy_alert = '🔴 ALLERGY: Aspirin! DO NOT PRESCRIBE!';
+            } else if (allergies.includes('nsaid') && med.category === 'NSAID') {
+                allergy_alert = '⚠️ NSAID allergy - use with caution';
+            }
+
+            return {
+                name: med.name,
+                is_safe: !allergy_alert,
+                severity: allergy_alert ? 'high' : 'medium',
+                recommended_dosage: recommended_dosage,
+                recommended_daily_mg: 1000,
+                max_safe_daily_mg: 2000,
+                age_advice: age_advice,
+                gender_advice: null,
+                allergy_alert: allergy_alert,
+                interaction_alert: null,
+                disease_alert: null,
+                special_instructions: 'Take as prescribed. Consult pharmacist if needed.'
+            };
+        });
+
+        return {
+            medications: medications,
+            overall_safety: medications.some(m => !m.is_safe) ? 'unsafe' : 'caution',
+            summary: `Analysis based on age ${age} and allergies. ${isElderly ? 'Elderly patient requires dose adjustment. ' : ''}${isChild ? 'Child patient requires weight-based dosing. ' : ''}`,
+            critical_alerts: medications.filter(m => !m.is_safe).map(m => m.allergy_alert)
+        };
+    }
+
+    // ============================================================================
+    // SECTION 4: Display Functions
+    // ============================================================================
+
+    /**
+     * Display AI analysis results in UI
+     * @param {Object} analysis - Analysis result from AI
+     * @param {Object} patient - Patient information
+     */
+    function displayPersonalizedAnalysis(analysis, patient) {
+        // Display alerts
+        if (DOM.alertsContent) {
+            let alertsHtml = '';
+
+            if (analysis.critical_alerts && analysis.critical_alerts.length > 0) {
+                alertsHtml += `
+            <div class="mb-3 p-3 bg-red-100 border border-red-300 rounded-lg text-red-700">
+                <i class="fas fa-skull-crosswalk mr-2"></i>
+                <strong>CRITICAL ALERTS:</strong>
+                <ul class="mt-2 list-disc list-inside">
+                    ${analysis.critical_alerts.map(alert => `<li>${escapeHtml(alert)}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+            }
+
+            for (const med of analysis.medications) {
+                const severityColor = med.severity === 'high' ? 'red' : (med.severity === 'medium' ? 'yellow' : 'blue');
+                alertsHtml += `
+            <div class="mb-3 p-3 border border-${severityColor}-300 rounded-lg bg-${severityColor}-50">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        ${med.is_safe ?
+                        '<i class="fas fa-check-circle text-green-500 text-xl"></i>' :
+                        '<i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>'}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h4 class="font-bold">${escapeHtml(med.name)}</h4>
+                        ${med.age_advice ? `<p class="text-sm mt-1"><i class="fas fa-calendar-alt"></i> ${escapeHtml(med.age_advice)}</p>` : ''}
+                        ${med.allergy_alert ? `<p class="text-sm mt-1 text-red-600"><i class="fas fa-allergies"></i> ${escapeHtml(med.allergy_alert)}</p>` : ''}
+                        ${med.special_instructions ? `<p class="text-sm mt-1 text-green-600"><i class="fas fa-info-circle"></i> ${escapeHtml(med.special_instructions)}</p>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            alertsHtml += `<div class="mt-3 pt-3 border-t">
+        <strong>📋 ${analysis.overall_safety === 'safe' ? '✅' : (analysis.overall_safety === 'unsafe' ? '🔴' : '⚠️')} Overall Assessment:</strong> 
+        ${escapeHtml(analysis.summary)}
+    </div>`;
+
+            DOM.alertsContent.innerHTML = alertsHtml;
+        }
+
+        // Display dosage table
+        if (DOM.dosageTableBody && DOM.dosageSummary) {
+            let dosageHtml = '';
+            for (const med of analysis.medications) {
+                dosageHtml += `
+            <tr class="border-b">
+                <td class="px-3 py-2 font-medium">${escapeHtml(med.name)}</td>
+                <td class="px-3 py-2">${med.recommended_daily_mg || '?'} mg</td>
+                <td class="px-3 py-2">${med.max_safe_daily_mg || '?'} mg</td>
+                <td class="px-3 py-2">
+                    ${med.recommended_daily_mg <= med.max_safe_daily_mg ?
+                        '<span class="text-green-600">✓ Safe</span>' :
+                        '<span class="text-red-600">⚠️ Exceeds limit</span>'}
+                </td>
+                <td class="px-3 py-2 text-sm">${escapeHtml(med.recommended_dosage)}</td>
+            </tr>
+        `;
+            }
+            DOM.dosageTableBody.innerHTML = dosageHtml;
+
+            DOM.dosageSummary.innerHTML = `
+        <div class="p-3 rounded-lg ${analysis.overall_safety === 'safe' ? 'bg-green-100 text-green-700' :
+                    (analysis.overall_safety === 'unsafe' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')}">
+            <i class="fas fa-${analysis.overall_safety === 'safe' ? 'check-circle' :
+                    (analysis.overall_safety === 'unsafe' ? 'exclamation-triangle' : 'info-circle')} mr-2"></i>
+            <strong>Patient: ${patient.age} years, ${patient.gender || 'gender not specified'}</strong>
+            ${patient.chronic_conditions !== 'None' ? `<br>🏥 Chronic: ${patient.chronic_conditions.substring(0, 100)}` : ''}
+            ${patient.allergies !== 'None' ? `<br>⚠️ Allergies: ${patient.allergies.substring(0, 100)}` : ''}
+        </div>
+    `;
+        }
+    }
+
+    /**
+     * Display compact AI results (with Font Awesome icons)
+     */
+    function displayCompactAnalysis(analysis, patient, medicationsInfo, isElderly) {
+        // Build alerts HTML
+        let alertsHtml = `
+    <div class="p-2 bg-blue-50 text-blue-700 text-sm mb-3 rounded-lg flex items-center gap-2">
+        <i class="fas fa-robot text-blue-500"></i>
+        <span>${escapeHtml(analysis.summary || 'AI analysis completed')}</span>
+    </div>
+`;
+
+        let dosageHtml = '';
+
+        for (const med of analysis.medications) {
+            const safeIcon = med.is_safe !== false ? 'fa-check-circle' : 'fa-exclamation-triangle';
+            const safeColor = med.is_safe !== false ? 'text-green-600' : 'text-red-600';
+            const bgColor = med.is_safe !== false ? 'bg-green-50' : 'bg-red-50';
+            const borderColor = med.is_safe !== false ? 'border-green-200' : 'border-red-200';
+
+            alertsHtml += `
+        <div class="mb-2 p-2 rounded-lg ${bgColor} border ${borderColor}">
+            <div class="flex items-start gap-2">
+                <i class="fas ${safeIcon} ${safeColor} mt-0.5"></i>
+                <div class="flex-1">
+                    <span class="font-medium">${escapeHtml(med.name)}</span>
+                    <span class="text-gray-600 text-sm ml-2">
+                        <i class="fas fa-capsules text-blue-500 mr-1"></i>
+                        ${escapeHtml(med.recommended_dosage || 'Standard dose')}
+                    </span>
+                    <p class="text-gray-500 text-xs mt-1">
+                        <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                        ${escapeHtml(med.reasoning || '')}
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+
+            dosageHtml += `
+        <tr class="border-b hover:bg-gray-50">
+            <td class="px-2 py-2 text-sm">
+                <i class="fas fa-pills text-blue-400 mr-1"></i>
+                ${escapeHtml(med.name)}
+            </td>
+            <td class="px-2 py-2 text-sm">${escapeHtml(med.recommended_dosage || '-')}</td>
+            <td class="px-2 py-2 text-sm">-</td>
+            <td class="px-2 py-2 text-sm">
+                <span class="px-2 py-0.5 rounded-full text-xs ${med.is_safe !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                    <i class="fas ${med.is_safe !== false ? 'fa-check' : 'fa-exclamation'} mr-1"></i>
+                    ${med.is_safe !== false ? 'Safe' : 'Caution'}
+                </span>
+            </td>
+            <td class="px-2 py-2 text-xs text-gray-500">${escapeHtml((med.reasoning || '').substring(0, 50))}</td>
+        </tr>
+    `;
+        }
+
+        if (DOM.alertsContent) DOM.alertsContent.innerHTML = alertsHtml;
+        if (DOM.dosageTableBody) DOM.dosageTableBody.innerHTML = dosageHtml || '<tr><td colspan="5" class="text-center text-gray-400"><i class="fas fa-chart-line"></i> No data</td></tr>';
+        if (DOM.dosageSummary) {
+            DOM.dosageSummary.innerHTML = `
+        <div class="p-2 bg-green-50 text-green-700 rounded-lg flex items-center gap-2">
+            <i class="fas fa-chart-simple"></i>
+            <span class="text-sm">Analysis complete</span>
+        </div>
+    `;
+        }
+    }
+
+    /**
+     * Display fallback analysis (no AI)
+     */
+    function displayFallbackAnalysis(medicationsInfo, patient, isElderly, age) {
+        let simpleHtml = '';
+        let simpleDosage = '';
+
+        for (const med of medicationsInfo) {
+            simpleHtml += `
+        <div class="mb-2 p-2 border-b border-gray-100">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                <div class="flex-1">
+                    <span class="font-medium">${escapeHtml(med.name)}</span>
+                    <span class="text-gray-600 text-sm ml-2">
+                        <i class="fas fa-capsules text-blue-500 mr-1"></i>
+                        ${escapeHtml(med.requested_dosage || 'Standard dose')}
+                    </span>
+                    ${isElderly ? '<p class="text-yellow-600 text-xs mt-1"><i class="fas fa-exclamation-triangle"></i> Elderly - reduce dose by 50%</p>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+            simpleDosage += `
+        <tr class="border-b">
+            <td class="px-2 py-2 text-sm"><i class="fas fa-pills text-blue-400 mr-1"></i>${escapeHtml(med.name)}</td>
+            <td class="px-2 py-2 text-sm">${escapeHtml(med.requested_dosage || '-')}</td>
+            <td class="px-2 py-2 text-sm">-</td>
+            <td class="px-2 py-2 text-sm"><span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700"><i class="fas fa-check mr-1"></i>OK</span></td>
+            <td class="px-2 py-2 text-xs">${isElderly ? 'Adjust for age' : 'Standard'}</td>
+        </tr>
+    `;
+        }
+
+        if (DOM.alertsContent) {
+            DOM.alertsContent.innerHTML = `
+        <div class="p-2 bg-blue-50 text-blue-700 text-sm mb-3 rounded-lg flex items-center gap-2">
+            <i class="fas fa-chart-line"></i>
+            <span>Analysis for ${age} year old patient</span>
+        </div>
+        ${simpleHtml}
+    `;
+        }
+        if (DOM.dosageTableBody) DOM.dosageTableBody.innerHTML = simpleDosage;
+        if (DOM.dosageSummary) {
+            DOM.dosageSummary.innerHTML = `
+        <div class="p-2 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2">
+            <i class="fas fa-calendar-alt"></i>
+            <span class="text-sm">Age: ${age} years</span>
+        </div>
+    `;
+        }
+    }
+
+    // ============================================================================
+    // SECTION 5: AI Analysis Core Function
+    // ============================================================================
+
+    /**
+     * Main AI analysis function using Puter AI
+     * @param {number} patientId - Patient ID
+     * @param {Array} selectedMedications - List of selected medications
+     */
+    async function analyzePrescriptionWithAI(patientId, selectedMedications) {
+        if (!selectedMedications.length) {
+            hideAnalysisContainers();
+            return;
+        }
+
+        showLoadingState();
+
+        try {
+            // Fetch patient data from backend
+            const response = await fetch(`/prescription/api/analyze-prescription/${patientId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ medications: selectedMedications })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) throw new Error('Unable to load patient data');
+
+            const patient = data.patient_profile;
+            const medicationsInfo = data.medications_info;
+            const age = patient.age || 0;
+            const isElderly = age >= 65;
+            const isChild = age < 18;
+
+            // Build medication list for prompt
+            const medList = medicationsInfo.map(m => `- ${m.name}`).join('\n');
+
+            let ageNote = '';
+            if (isElderly) ageNote = 'Elderly patient - reduce dose by 50%.';
+            if (isChild) ageNote = 'Child patient - use weight-based dosing.';
+
+            // Build AI prompt
+            const prompt = `Clinical pharmacist. ${ageNote} Patient ${age}y. Allergies: ${patient.allergies || 'none'}. Medications: ${medList}
+
+Return ONLY valid JSON (short answers, max 15 words per field):
+{
+"medications": [
+    {
+        "name": "",
+        "is_safe": true,
+        "recommended_dosage": "",
+        "reasoning": ""
+    }
+],
+"summary": ""
+}`;
+
+            // Call Puter AI
+            const aiResponse = await puter.ai.chat(prompt);
+
+            let responseText = aiResponse.message?.content || aiResponse.content || JSON.stringify(aiResponse);
+
+            // Extract JSON from response
+            let jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            let analysis = null;
+
+            if (jsonMatch) {
+                try {
+                    analysis = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.log("JSON parse failed, using fallback");
+                }
+            }
+
+            // Display results based on AI success
+            if (analysis && analysis.medications && analysis.medications.length > 0) {
+                displayCompactAnalysis(analysis, patient, medicationsInfo, isElderly);
+            } else {
+                displayFallbackAnalysis(medicationsInfo, patient, isElderly, age);
+            }
+
+        } catch (error) {
+            // Silent fallback - never show errors to user
+            console.log("Using fallback analysis:", error);
+
+            try {
+                const fallbackResponse = await fetch(`/prescription/api/analyze-prescription/${patientId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ medications: selectedMedications })
+                });
+                const fallbackData = await fallbackResponse.json();
+
+                if (fallbackData.success) {
+                    const patient = fallbackData.patient_profile;
+                    const medicationsInfo = fallbackData.medications_info;
+                    const age = patient.age || 0;
+                    const isElderly = age >= 65;
+                    displayFallbackAnalysis(medicationsInfo, patient, isElderly, age);
+                }
+            } catch (e) {
+                // Ultimate fallback - empty state
+                if (DOM.alertsContent) {
+                    DOM.alertsContent.innerHTML = `
+                <div class="p-6 text-center text-gray-400">
+                    <i class="fas fa-prescription-bottle text-3xl mb-2"></i>
+                    <p class="text-sm">Select medications to see analysis</p>
+                </div>
+            `;
+                }
+                if (DOM.dosageTableBody) {
+                    DOM.dosageTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-400"><i class="fas fa-chart-line"></i> Select medications to analyze</td></tr>';
+                }
+            }
+        }
+    }
+
+    // ============================================================================
+    // SECTION 6: UI Event Handlers
+    // ============================================================================
+
+    /**
+     * Add a new medicine row to the table
+     */
+    function addMedicine() {
+        const tbody = DOM.medicationsList;
+        const template = document.querySelector('.medication-row');
+        const newRow = template.cloneNode(true);
+
+        newRow.querySelectorAll('select, input').forEach(input => {
+            if (input.tagName === 'SELECT') {
+                input.selectedIndex = 0;
+            } else {
+                input.value = '';
+            }
+        });
+
+        tbody.appendChild(newRow);
+        attachMedicineEvents(newRow);
+    }
+
+    /**
+     * Remove a medicine row
+     * @param {HTMLElement} btn - The remove button clicked
+     */
+    function removeMedicine(btn) {
+        const rows = document.querySelectorAll('.medication-row');
+        if (rows.length > 1) {
+            btn.closest('.medication-row').remove();
+            onMedicationsChange(window.patientId || {{ patient.id }});
+    } else {
+        alert('{{ gettext("At least one medication is required") }}');
+    }
+}
+
+    /**
+     * Attach event listeners to a medicine row
+     * @param {HTMLElement} row - The medicine row element
+     */
+    function attachMedicineEvents(row) {
+        const medicineSelect = row.querySelector('.medicine-select');
+        const dosageSelect = row.querySelector('.dosage-select');
+
+        medicineSelect.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const dosages = selectedOption.getAttribute('data-dosages');
+
+            dosageSelect.innerHTML = '<option value="">{{ gettext("Select --") }}</option>';
+
+            if (dosages) {
+                try {
+                    const dosageList = JSON.parse(dosages);
+                    dosageList.forEach(dosage => {
+                        const option = document.createElement('option');
+                        option.value = dosage;
+                        option.textContent = dosage;
+                        dosageSelect.appendChild(option);
+                    });
+                } catch (e) {
+                    console.error('Error parsing dosages:', e);
+                }
+            }
+
+            onMedicationsChange(window.patientId || {{ patient.id }});
+    });
+
+    const otherInputs = row.querySelectorAll('select, input');
+    otherInputs.forEach(input => {
+        input.addEventListener('change', () => onMedicationsChange(window.patientId || {{ patient.id }}));
+});
+}
+
+    /**
+     * Main function called when medications change
+     * @param {number} patientId - Patient ID
+     */
+    async function onMedicationsChange(patientId) {
+        const medicineSelects = document.querySelectorAll('.medicine-select');
+        const dosageSelects = document.querySelectorAll('.dosage-select');
+        const frequencySelects = document.querySelectorAll('.frequency-select');
+
+        const selectedMedications = [];
+        for (let i = 0; i < medicineSelects.length; i++) {
+            if (medicineSelects[i].value) {
+                selectedMedications.push({
+                    medicine_id: medicineSelects[i].value,
+                    name: medicineSelects[i].options[medicineSelects[i].selectedIndex]?.text.split(' (')[0] || '',
+                    dosage: dosageSelects[i]?.value || '',
+                    frequency: frequencySelects[i]?.value || ''
+                });
+            }
+        }
+
+        if (selectedMedications.length > 0 && patientId) {
+            await analyzePrescriptionWithAI(patientId, selectedMedications);
+        } else {
+            hideAnalysisContainers();
+        }
+    }
+
+    // ============================================================================
+    // SECTION 7: Initialization
+    // ============================================================================
+
+    // Store patient ID for global access
+    window.patientId = {{ patient.id }};
+
+    // Initialize event listeners for existing rows
+    document.querySelectorAll('.medication-row').forEach(row => attachMedicineEvents(row));
+</script>
+
+{% endblock %}

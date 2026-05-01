@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Werkzeug
+python-dotenv
+Pillow
+pytesseract
+puter-python-sdk
+gunicorn
+Flask-Mail
+
+

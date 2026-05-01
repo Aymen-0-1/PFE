@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('My Prescriptions') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-prescription-bottle text-blue-600 mr-3"></i>{{ gettext('My Prescriptions') }}
+        </h1>
+        <p class="text-gray-500 mt-1">{{ gettext('View and manage all your prescriptions') }}</p>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm opacity-90">{{ gettext('Total Prescriptions') }}</p>
+                    <p class="text-2xl font-bold">{{ prescriptions|length }}</p>
+                </div>
+                <i class="fas fa-file-prescription text-3xl opacity-80"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm opacity-90">{{ gettext('Active Prescriptions') }}</p>
+                    <p class="text-2xl font-bold">{{ active_count }}</p>
+                </div>
+                <i class="fas fa-check-circle text-3xl opacity-80"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl p-4 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm opacity-90">{{ gettext('Expired Prescriptions') }}</p>
+                    <p class="text-2xl font-bold">{{ expired_count }}</p>
+                </div>
+                <i class="fas fa-clock text-3xl opacity-80"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions List -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3">
+            <h2 class="text-white font-semibold">
+                <i class="fas fa-list-alt mr-2"></i>{{ gettext('All Prescriptions') }}
+            </h2>
+        </div>
+
+        <div class="divide-y divide-gray-200">
+            {% for prescription in prescriptions %}
+            <div class="p-5 hover:bg-gray-50 transition">
+                <div class="flex justify-between items-start">
+                    <!-- Left side: Prescription info -->
+                    <div class="flex-1">
+                        <div class="flex items-center flex-wrap gap-2 mb-2">
+                            <span class="font-semibold text-gray-800">
+                                <i class="fas fa-file-prescription text-purple-500 mr-1"></i>
+                                {{ gettext('Prescription') }} #{{ prescription.id }}
+                            </span>
+                            <span class="text-sm text-gray-500">
+                                <i class="fas fa-calendar-alt mr-1"></i>{{ prescription.created_at.strftime('%d %B %Y')
+                                }}
+                            </span>
+                            {% if prescription.is_active %}
+                            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">
+                                <i class="fas fa-check-circle"></i> {{ gettext('Active') }}
+                            </span>
+                            {% else %}
+                            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
+                                <i class="fas fa-clock"></i> {{ gettext('Expired') }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Doctor info -->
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-user-md text-gray-400 w-5"></i>
+                            <span class="text-gray-700 text-sm">
+                                {% if prescription.doctor %}
+                                {{ gettext('Dr.') }} {{ prescription.doctor.name }}
+                                {% if prescription.doctor.specialty %}
+                                - {{ prescription.doctor.specialty.name_en }}
+                                {% endif %}
+                                {% else %}
+                                {{ gettext('Doctor information not available') }}
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Diagnosis -->
+                        {% if prescription.diagnosis %}
+                        <div class="mb-2">
+                            <i class="fas fa-stethoscope text-gray-400 w-5"></i>
+                            <span class="text-gray-600 text-sm">{{ prescription.diagnosis[:100] }}{% if
+                                prescription.diagnosis|length > 100 %}...{% endif %}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Medications -->
+                        <div class="mb-3">
+                            <i class="fas fa-pills text-gray-400 w-5"></i>
+                            <div class="inline-flex flex-wrap gap-1">
+                                {% for item in prescription.items %}
+                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                                    {{ item.medicine.commercial_name if item.medicine else item.medicine_id }}
+                                    {{ item.dosage if item.dosage }}
+                                </span>
+                                {% endfor %}
+                                {% if not prescription.items %}
+                                <span class="text-gray-400 text-sm">{{ gettext('No medications listed') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Validity info - إضافة تاريخ الانتهاء المحسوب -->
+                        <div class="text-xs text-gray-400">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            {{ gettext('Issued on') }}: {{ prescription.created_at.strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">
+                            <i class="fas fa-hourglass-half mr-1"></i>
+                            {{ gettext('Valid for') }}: 30 {{ gettext('days from issue date') }}
+                            {% set expiry_date = prescription.created_at + timedelta(days=30) %}
+                            <br>
+                            <i class="fas fa-calendar-times mr-1"></i>
+                            {{ gettext('Expires on') }}: {{ expiry_date.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+
+                    <!-- Right side: Action buttons (Share removed) -->
+                    <div class="flex flex-col gap-2 ml-4">
+                        <a href="{{ url_for('prescription.view_prescription', prescription_id=prescription.id) }}"
+                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm text-center">
+                            <i class="fas fa-eye mr-1"></i>{{ gettext('View') }}
+                        </a>
+                        <a href="javascript:void(0)" onclick="printPrescription({{ prescription.id }})"
+                            class="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm text-center">
+                            <i class="fas fa-print mr-1"></i>{{ gettext('Print') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-gray-400">
+                <i class="fas fa-prescription-bottle fa-4x mb-4 text-gray-300"></i>
+                <p class="text-lg">{{ gettext('No prescriptions found') }}</p>
+                <p class="text-sm mt-1">{{ gettext('Your prescriptions will appear here once issued by your doctor') }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Important Notes -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-blue-500 text-xl mr-3 mt-0.5"></i>
+            <div>
+                <h3 class="font-semibold text-blue-800">{{ gettext('Important Information') }}</h3>
+                <ul class="text-sm text-blue-700 mt-1 space-y-1">
+                    <li><i class="fas fa-clock mr-2"></i>{{ gettext('A prescription expires after the indicated validity
+                        period') }}</li>
+                    <li><i class="fas fa-user-md mr-2"></i>{{ gettext('Contact your doctor for a renewal if needed') }}
+                    </li>
+                    <li><i class="fas fa-print mr-2"></i>{{ gettext('You can print your prescriptions or share them via
+                        email') }}</li>
+                    <li><i class="fas fa-shield-alt mr-2"></i>{{ gettext('Keep your prescriptions safe and do not share
+                        them with unauthorized persons') }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== PRINT PRESCRIPTION FUNCTION ====================
+    function printPrescription(prescriptionId) {
+        // فتح نافذة جديدة لعرض الوصفة
+        const printWindow = window.open(`/prescription/${prescriptionId}/view`, '_blank');
+
+        if (printWindow) {
+            // انتظر حتى تحميل الصفحة بالكامل
+            printWindow.onload = function () {
+                // تأخير بسيط لضمان تحميل جميع العناصر
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+            };
+
+            // في حالة حدوث خطأ
+            printWindow.onerror = function () {
+                alert('{{ gettext("Unable to open prescription. Please try again.") }}');
+            };
+        } else {
+            alert('{{ gettext("Please allow pop-ups to print prescriptions.") }}');
+        }
+    }
+</script>
+{% endblock %}

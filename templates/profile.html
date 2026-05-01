@@ -1,0 +1,770 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Account Settings') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<style>
+    /* تثبيت القائمة الجانبية في صفحة الإعدادات */
+    .settings-sidebar {
+        position: sticky;
+        top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .settings-sidebar {
+            position: static;
+        }
+    }
+</style>
+<div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-cog text-blue-600 mr-3"></i>{{ gettext('Account Settings') }}
+        </h1>
+        <p class="text-gray-500 mt-1">{{ gettext('Manage your personal information and account preferences') }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Sidebar Menu -->
+        <div class="lg:col-span-1 settings-sidebar">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 border-b bg-gray-50">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-user text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-semibold text-gray-800">{{ user.name }}</p>
+                            <p class="text-xs text-gray-500">
+                                {% if session.get('user_role') == 'doctor' %}
+                                <i class="fas fa-user-md mr-1"></i>{{ gettext('Doctor') }}
+                                {% else %}
+                                <i class="fas fa-user mr-1"></i>{{ gettext('Patient') }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-2">
+                    <button onclick="showSection('profile')" id="btnProfile"
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition mb-1">
+                        <i class="fas fa-user-circle w-5 text-blue-500"></i> {{ gettext('Personal Information') }}
+                    </button>
+                    <button onclick="showSection('password')" id="btnPassword"
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition mb-1">
+                        <i class="fas fa-lock w-5 text-blue-500"></i> {{ gettext('Change Password') }}
+                    </button>
+                    <button onclick="showSection('preferences')" id="btnPreferences"
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition mb-1">
+                        <i class="fas fa-globe w-5 text-blue-500"></i> {{ gettext('Preferences') }}
+                    </button>
+                    {% if session.get('user_role') == 'patient' %}
+                    <button onclick="showSection('doctors')" id="btnDoctors"
+                        class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition mb-1">
+                        <i class="fas fa-user-md w-5 text-blue-500"></i> {{ gettext('My Doctors') }}
+                    </button>
+                    {% endif %}
+                    <hr class="my-2">
+                    <button onclick="showDeleteModal()"
+                        class="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition">
+                        <i class="fas fa-trash-alt w-5"></i> {{ gettext('Delete Account') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="lg:col-span-2">
+
+            <!-- Personal Information Section -->
+            <div id="profileSection" class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-user-circle mr-2"></i>{{ gettext('Personal Information') }}
+                    </h2>
+                </div>
+                <form method="POST" class="p-5">
+                    <input type="hidden" name="action" value="update_info">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-user text-blue-500 mr-2"></i>{{ gettext('Full Name') }}
+                            </label>
+                            <input type="text" name="name" value="{{ user.name }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-envelope text-blue-500 mr-2"></i>{{ gettext('Email') }}
+                            </label>
+                            <input type="email" name="email" value="{{ user.email or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-phone text-blue-500 mr-2"></i>{{ gettext('Phone') }}
+                            </label>
+                            <input type="tel" name="phone" value="{{ user.phone or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        {% if session.get('user_role') == 'doctor' %}
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-stethoscope text-blue-500 mr-2"></i>{{ gettext('Specialty') }}
+                            </label>
+                            <select name="specialty_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <option value="">{{ gettext('Select Specialty') }}</option>
+                                {% for specialty in specialties %}
+                                <option value="{{ specialty.id }}" {% if user.specialty_id==specialty.id %}selected{%
+                                    endif %}>
+                                    {{ specialty.name_en }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>{{ gettext('Commune') }}
+                            </label>
+                            <select name="commune_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <option value="">{{ gettext('Select Commune') }}</option>
+                                {% for commune in communes %}
+                                <option value="{{ commune.id }}" {% if user.commune_id==commune.id %}selected{% endif
+                                    %}>
+                                    {{ commune.name_en }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!-- Doctor Clinic Fields -->
+                        <div class="col-span-2 border-t pt-4 mt-2">
+                            <h3 class="font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-hospital text-blue-500 mr-2"></i>{{ gettext('Clinic Information') }}
+                            </h3>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Clinic Name') }}</label>
+                            <input type="text" name="clinic_name" value="{{ user.clinic_name or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Clinic Address') }}</label>
+                            <input type="text" name="clinic_address" value="{{ user.clinic_address or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Clinic Phone') }}</label>
+                            <input type="tel" name="clinic_phone" value="{{ user.clinic_phone or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Clinic Email') }}</label>
+                            <input type="email" name="clinic_email" value="{{ user.clinic_email or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <!-- Clinic Logo Section - متسق مع التصميم -->
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-image text-blue-500 mr-2"></i>{{ gettext('Clinic Logo') }}
+                            </label>
+                            <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <!-- Logo Preview -->
+                                <div
+                                    class="w-20 h-20 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                                    {% if user.clinic_logo %}
+                                    <img src="{{ url_for('static', filename=user.clinic_logo) }}" alt="Clinic Logo"
+                                        class="w-full h-full object-cover">
+                                    {% else %}
+                                    <i class="fas fa-hospital text-3xl text-gray-400"></i>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Upload Form -->
+                                <div class="flex-1">
+                                    <div class="flex flex-wrap gap-2">
+                                        <label
+                                            class="cursor-pointer bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition text-sm">
+                                            <i class="fas fa-upload mr-1"></i>{{ gettext('Upload Logo') }}
+                                            <input type="file" name="logo" accept="image/*" class="hidden"
+                                                onchange="uploadLogo(this)">
+                                        </label>
+                                        {% if user.clinic_logo %}
+                                        <button type="button" onclick="removeLogo()"
+                                            class="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition text-sm">
+                                            <i class="fas fa-trash mr-1"></i>{{ gettext('Remove') }}
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2">{{ gettext('Recommended size: 200x200px.
+                                        Formats: PNG, JPG, JPEG, GIF, SVG') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% else %}
+                        <!-- Patient specific fields -->
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>{{ gettext('Age') }}
+                            </label>
+                            <input type="number" name="age" value="{{ user.age or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-venus-mars text-blue-500 mr-2"></i>{{ gettext('Gender') }}
+                            </label>
+                            <select name="gender"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">{{ gettext('Select Gender') }}</option>
+                                <option value="Male" {% if current_user.gender=='Male' %}selected{% endif %}>{{
+                                    gettext('Male') }}</option>
+                                <option value="Female" {% if current_user.gender=='Female' %}selected{% endif %}>{{
+                                    gettext('Female') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-tint text-blue-500 mr-2"></i>{{ gettext('Blood Type') }}
+                            </label>
+                            <select name="blood_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                <option value="">{{ gettext('Select Blood Type') }}</option>
+                                <option value="A+" {% if user.blood_type=='A+' %}selected{% endif %}>A+</option>
+                                <option value="A-" {% if user.blood_type=='A-' %}selected{% endif %}>A-</option>
+                                <option value="B+" {% if user.blood_type=='B+' %}selected{% endif %}>B+</option>
+                                <option value="B-" {% if user.blood_type=='B-' %}selected{% endif %}>B-</option>
+                                <option value="AB+" {% if user.blood_type=='AB+' %}selected{% endif %}>AB+</option>
+                                <option value="AB-" {% if user.blood_type=='AB-' %}selected{% endif %}>AB-</option>
+                                <option value="O+" {% if user.blood_type=='O+' %}selected{% endif %}>O+</option>
+                                <option value="O-" {% if user.blood_type=='O-' %}selected{% endif %}>O-</option>
+                            </select>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-allergies text-blue-500 mr-2"></i>{{ gettext('Allergies') }}
+                            </label>
+                            <textarea name="allergies" rows="2"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">{{ user.allergies or '' }}</textarea>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-heartbeat text-blue-500 mr-2"></i>{{ gettext('Chronic Conditions') }}
+                            </label>
+                            <textarea name="chronic_conditions" rows="2"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">{{ user.chronic_conditions or '' }}</textarea>
+                        </div>
+
+                        <div class="col-span-2 border-t pt-4 mt-2">
+                            <h3 class="font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-ambulance text-blue-500 mr-2"></i>{{ gettext('Emergency Contact') }}
+                            </h3>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Contact Name') }}</label>
+                            <input type="text" name="emergency_contact" value="{{ user.emergency_contact_name or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">{{ gettext('Contact Phone') }}</label>
+                            <input type="tel" name="emergency_phone" value="{{ user.emergency_contact_phone or '' }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="reset"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            {{ gettext('Cancel') }}
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-save mr-2"></i>{{ gettext('Save Changes') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Change Password Section -->
+            <div id="passwordSection" class="bg-white rounded-xl shadow-md overflow-hidden" style="display: none;">
+                <div class="bg-gradient-to-r from-orange-600 to-red-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-lock mr-2"></i>{{ gettext('Change Password') }}
+                    </h2>
+                </div>
+                <form method="POST" class="p-5">
+                    <input type="hidden" name="action" value="update_password">
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-key text-blue-500 mr-2"></i>{{ gettext('Current Password') }}
+                            </label>
+                            <input type="password" name="old_password" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-lock text-blue-500 mr-2"></i>{{ gettext('New Password') }}
+                            </label>
+                            <input type="password" name="new_password" id="newPassword" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <p class="text-xs text-gray-400 mt-1">{{ gettext('Minimum 6 characters') }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-check-circle text-blue-500 mr-2"></i>{{ gettext('Confirm Password') }}
+                            </label>
+                            <input type="password" name="confirm_password" id="confirmPassword" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="showSection('profile')"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            {{ gettext('Cancel') }}
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-save mr-2"></i>{{ gettext('Update Password') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preferences Section -->
+            <div id="preferencesSection" class="bg-white rounded-xl shadow-md overflow-hidden" style="display: none;">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-globe mr-2"></i>{{ gettext('Preferences') }}
+                    </h2>
+                </div>
+                <div class="p-5">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-medium mb-3">{{ gettext('Language') }}</label>
+                        <div class="flex gap-4">
+                            <button onclick="setLanguage('en')"
+                                class="lang-btn px-4 py-2 border rounded-lg hover:bg-blue-50">
+                                <i class="fas fa-flag-usa mr-2"></i>English
+                            </button>
+                            <button onclick="setLanguage('fr')"
+                                class="lang-btn px-4 py-2 border rounded-lg hover:bg-blue-50">
+                                <i class="fas fa-flag-fr mr-2"></i>Français
+                            </button>
+                            <button onclick="setLanguage('ar')"
+                                class="lang-btn px-4 py-2 border rounded-lg hover:bg-blue-50">
+                                <i class="fas fa-flag mr-2"></i>العربية
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-3">{{ gettext('Notifications') }}</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="ml-2"><i class="fas fa-envelope mr-2"></i>{{ gettext('Receive email
+                                    alerts') }}</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="ml-2"><i class="fas fa-calendar-check mr-2"></i>{{ gettext('Receive
+                                    appointment reminders') }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button onclick="showSection('profile')"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-save mr-2"></i>{{ gettext('Save Preferences') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Doctors Section (Patient only) -->
+            {% if session.get('user_role') == 'patient' %}
+            <div id="doctorsSection" class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-teal-500 px-5 py-3 flex justify-between items-center">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-user-md mr-2"></i>{{ gettext('My Doctors') }}
+                    </h2>
+                    <button onclick="openAddDoctorModal()"
+                        class="bg-white text-green-600 px-3 py-1 rounded-lg hover:bg-gray-100 transition text-sm flex items-center gap-1">
+                        <i class="fas fa-plus-circle"></i> {{ gettext('Add Doctor') }}
+                    </button>
+                </div>
+                <div class="p-5">
+                    {% if doctors %}
+                    <div class="space-y-3">
+                        {% for item in doctors %}
+                        <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-md text-blue-600"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <p class="font-medium text-gray-800">{{ item.doctor.name }}</p>
+                                <p class="text-xs text-gray-500">{{ item.doctor.specialty.name_en if
+                                    item.doctor.specialty else gettext('General Practitioner') }}</p>
+                            </div>
+                            <a href="{{ url_for('patient.patient_reports_by_doctor', doctor_id=item.doctor.id) }}"
+                                class="text-blue-600 hover:text-blue-800 text-sm">
+                                <i class="fas fa-file-alt mr-1"></i>{{ gettext('Reports') }} ({{ item.reports_count }})
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-user-md fa-3x mb-3 text-gray-300"></i>
+                        <p>{{ gettext('No doctors assigned yet') }}</p>
+                        <button onclick="openAddDoctorModal()" class="mt-3 text-blue-600 hover:underline">
+                            <i class="fas fa-plus-circle mr-1"></i>{{ gettext('Add your first doctor') }}
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+    style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div class="bg-gradient-to-r from-red-600 to-red-700 px-5 py-3 flex justify-between items-center rounded-t-xl">
+            <h3 class="text-white font-semibold">
+                <i class="fas fa-exclamation-triangle mr-2"></i>{{ gettext('Delete Account') }}
+            </h3>
+            <button onclick="closeDeleteModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('auth.delete_account') }}" class="p-5">
+            <p class="text-gray-700 mb-4">{{ gettext('Are you sure you want to delete your account? This action cannot
+                be undone.') }}</p>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">{{ gettext('Enter your password to confirm')
+                    }}</label>
+                <input type="password" name="password" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeDeleteModal()"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                    {{ gettext('Cancel') }}
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <i class="fas fa-trash-alt mr-2"></i>{{ gettext('Delete Account') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Add Doctor Modal -->
+<div id="addDoctorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+    style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div
+            class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3 flex justify-between items-center rounded-t-xl">
+            <h3 class="text-white font-semibold">
+                <i class="fas fa-user-md mr-2"></i>{{ gettext('Add New Doctor') }}
+            </h3>
+            <button onclick="closeAddDoctorModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">{{ gettext('Search Doctor') }}</label>
+                <div class="relative">
+                    <input type="text" id="doctorSearchInput"
+                        placeholder="{{ gettext('Search by name, specialty or clinic...') }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pl-10">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <div id="doctorSearchResults"
+                class="max-h-64 overflow-y-auto border rounded-lg divide-y divide-gray-200 hidden">
+                <!-- Results will appear here -->
+            </div>
+
+            <div id="doctorSearchLoading" class="text-center py-4 hidden">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-xl"></i>
+                <p class="text-gray-500 mt-2">{{ gettext('Searching...') }}</p>
+            </div>
+
+            <div id="doctorSearchEmpty" class="text-center py-8 text-gray-400 hidden">
+                <i class="fas fa-search fa-3x mb-2"></i>
+                <p>{{ gettext('Start typing to search for doctors') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Section switching
+    // استبدل دالة showSection بهذه
+    function showSection(section) {
+        const sections = ['profile', 'password', 'preferences'];
+        {% if session.get('user_role') == 'patient' %}
+        sections.push('doctors');
+        {% endif %}
+
+        sections.forEach(s => {
+            const el = document.getElementById(s + 'Section');
+            if (el) el.style.display = 'none';
+        });
+
+        document.getElementById(section + 'Section').style.display = 'block';
+
+        // Update active button style
+        const buttons = ['btnProfile', 'btnPassword', 'btnPreferences'];
+        {% if session.get('user_role') == 'patient' %}
+        buttons.push('btnDoctors');
+        {% endif %}
+
+        buttons.forEach(btn => {
+            const el = document.getElementById(btn);
+            if (el) {
+                el.classList.remove('bg-blue-100', 'text-blue-600');
+                el.classList.add('hover:bg-blue-50');
+            }
+        });
+
+        const activeBtn = document.getElementById('btn' + section.charAt(0).toUpperCase() + section.slice(1));
+        if (activeBtn) {
+            activeBtn.classList.add('bg-blue-100', 'text-blue-600');
+            activeBtn.classList.remove('hover:bg-blue-50');
+        }
+    }
+    function setLanguage(lang) {
+        fetch('/set-language/' + lang).then(() => location.reload());
+    }
+
+    function showDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Close modal on outside click
+    document.getElementById('deleteModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeDeleteModal();
+    });
+
+    // Password validation
+    const newPass = document.getElementById('newPassword');
+    const confirmPass = document.getElementById('confirmPassword');
+    if (newPass && confirmPass) {
+        confirmPass.addEventListener('input', function () {
+            if (newPass.value !== this.value) {
+                this.setCustomValidity('{{ gettext("Passwords do not match") }}');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+
+    function uploadLogo(input) {
+        if (input.files && input.files[0]) {
+            const formData = new FormData();
+            formData.append('logo', input.files[0]);
+
+            fetch('/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+
+    function removeLogo() {
+        if (confirm('{{ gettext("Are you sure you want to remove the clinic logo?") }}')) {
+            fetch('/remove-logo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+    // ==================== ADD DOCTOR MODAL ====================
+    let searchTimeout = null;
+
+    function openAddDoctorModal() {
+        const modal = document.getElementById('addDoctorModal');
+        modal.style.display = 'flex';
+        document.getElementById('doctorSearchInput').value = '';
+        document.getElementById('doctorSearchResults').classList.add('hidden');
+        document.getElementById('doctorSearchEmpty').classList.remove('hidden');
+        document.getElementById('doctorSearchResults').innerHTML = '';
+        document.getElementById('doctorSearchInput').focus();
+    }
+
+    function closeAddDoctorModal() {
+        const modal = document.getElementById('addDoctorModal');
+        modal.style.display = 'none';
+    }
+
+    // Search doctors as user types
+    const searchInput = document.getElementById('doctorSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function (e) {
+            const query = e.target.value.trim();
+
+            if (searchTimeout) clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                document.getElementById('doctorSearchResults').classList.add('hidden');
+                document.getElementById('doctorSearchEmpty').classList.remove('hidden');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => searchDoctors(query), 500);
+        });
+    }
+
+    async function searchDoctors(query) {
+        const resultsDiv = document.getElementById('doctorSearchResults');
+        const loadingDiv = document.getElementById('doctorSearchLoading');
+        const emptyDiv = document.getElementById('doctorSearchEmpty');
+
+        resultsDiv.classList.add('hidden');
+        emptyDiv.classList.add('hidden');
+        loadingDiv.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`/patient/api/search-doctors?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            loadingDiv.classList.add('hidden');
+
+            if (data.doctors && data.doctors.length > 0) {
+                resultsDiv.innerHTML = data.doctors.map(doctor => `
+                <div class="p-3 hover:bg-gray-50 transition">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-gray-800">Dr. ${escapeHtml(doctor.name)}</p>
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-heartbeat mr-1"></i>${escapeHtml(doctor.specialty || 'General Medicine')}
+                            </p>
+                            ${doctor.clinic_name ? `<p class="text-xs text-gray-400"><i class="fas fa-hospital mr-1"></i>${escapeHtml(doctor.clinic_name)}</p>` : ''}
+                        </div>
+                        <button onclick="sendDoctorRequest(${doctor.id}, '${escapeHtml(doctor.name)}')" 
+                                class="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                            <i class="fas fa-plus mr-1"></i>{{ gettext('Add') }}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+                resultsDiv.classList.remove('hidden');
+            } else {
+                emptyDiv.innerHTML = `
+                <i class="fas fa-user-slash fa-3x mb-2"></i>
+                <p>{{ gettext('No doctors found') }}</p>
+                <p class="text-sm mt-1">{{ gettext('Try a different search term') }}</p>
+            `;
+                emptyDiv.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            loadingDiv.classList.add('hidden');
+            emptyDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-3x mb-2 text-red-400"></i>
+            <p>{{ gettext('Error searching doctors') }}</p>
+            <p class="text-sm mt-1">{{ gettext('Please try again') }}</p>
+        `;
+            emptyDiv.classList.remove('hidden');
+        }
+    }
+
+    async function sendDoctorRequest(doctorId, doctorName) {
+        if (!confirm(`{{ gettext('Send request to Dr.') }} ${doctorName}?`)) return;
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>{{ gettext("Sending...") }}';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/patient/api/request-doctor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ doctor_id: doctorId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(`{{ gettext('Request sent to Dr.') }} ${doctorName}`);
+                closeAddDoctorModal();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.error || '{{ gettext("Error sending request") }}');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('{{ gettext("Error sending request. Please try again.") }}');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('addDoctorModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeAddDoctorModal();
+    });
+
+    // Press ESC to close modal
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeAddDoctorModal();
+        }
+    });
+</script>
+{% endblock %}

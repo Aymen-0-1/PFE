@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "html"],
+  "files.associations": {
+    "**/templates/*.html": "html",
+    "*.html": "html",
+    "*.jinja": "html"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "emmet.includeLanguages": {
+    "jinja-html": "html"
+  },
+  "html.validate.scripts": false,
+  "html.validate.styles": false,
+  "eslint.enable": false
+}

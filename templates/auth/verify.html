@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Verify Email') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-8 py-6 text-center">
+            <i class="fas fa-envelope-open-text text-4xl text-white mb-2"></i>
+            <h1 class="text-2xl font-bold text-white">{{ gettext('Verify Your Email') }}</h1>
+            <p class="text-blue-100 mt-1">{{ gettext("We've sent a verification code to your email") }}</p>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-8">
+            <form method="POST" id="verifyForm">
+                <!-- 6-Digit Code Input -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-3 text-center">
+                        <i class="fas fa-key text-blue-500 mr-2"></i>{{ gettext('Enter Verification Code') }}
+                    </label>
+                    <div class="flex justify-center gap-2">
+                        <input type="text" name="code" maxlength="6"
+                            class="w-full text-center text-2xl font-mono py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="000000" required autofocus>
+                    </div>
+                    <p class="text-xs text-gray-400 text-center mt-2">
+                        <i class="fas fa-info-circle"></i> {{ gettext('Enter the 6-digit code sent to your email') }}
+                    </p>
+                </div>
+
+                <!-- Timer -->
+                <div id="timerContainer" class="text-center mb-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
+                        <i class="fas fa-hourglass-half text-orange-500"></i>
+                        <span id="timer" class="font-mono font-bold text-gray-700">10:00</span>
+                        <span class="text-gray-500 text-sm">{{ gettext('Code expires in') }}</span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6">
+                    <button type="submit" id="verifyBtn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-teal-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-check-circle mr-2"></i>{{ gettext('Verify Email') }}
+                    </button>
+                </div>
+            </form>
+
+            <!-- Resend Code Section -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600 mb-2">{{ gettext("Didn't receive the code?") }}</p>
+                <a href="{{ url_for('auth.resend_code') }}" id="resendLink"
+                    class="text-blue-600 hover:underline font-medium">
+                    <i class="fas fa-redo-alt mr-1"></i> {{ gettext('Resend Code') }}
+                </a>
+            </div>
+
+            <!-- Back to Register -->
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('auth.register') }}" class="text-gray-500 hover:text-gray-700 text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> {{ gettext('Back to Register') }}
+                </a>
+            </div>
+
+            <!-- Help Tips -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500 flex items-center gap-2">
+                    <i class="fas fa-search"></i> {{ gettext('Check your spam folder') }}
+                </p>
+                <p class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                    <i class="fas fa-hourglass-end"></i> {{ gettext('Code expires in 10 minutes') }}
+                </p>
+                <p class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                    <i class="fas fa-envelope"></i> {{ gettext('Make sure your email is correct') }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Timer functionality (10 minutes = 600 seconds)
+    let timeLeft = 600;
+    const timerElement = document.getElementById('timer');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendLink = document.getElementById('resendLink');
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimer() {
+        if (timeLeft <= 0) {
+            timerElement.textContent = '00:00';
+            timerElement.classList.add('text-red-500');
+            verifyBtn.disabled = true;
+            verifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            resendLink.classList.add('text-blue-600', 'hover:underline');
+            return;
+        }
+        timerElement.textContent = formatTime(timeLeft);
+        timeLeft--;
+        setTimeout(updateTimer, 1000);
+    }
+
+    updateTimer();
+</script>
+{% endblock %}

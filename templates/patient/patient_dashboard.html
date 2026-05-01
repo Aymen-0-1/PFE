@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Patient Dashboard') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    
+    <!-- Welcome Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-smile-wink text-blue-600 mr-3"></i>{{ gettext('Welcome Back') }}, {{ patient.name }}!
+        </h1>
+        <p class="text-gray-500 mt-1">{{ gettext('Here is an overview of your medical records') }}</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-500 text-sm">{{ gettext('Medical Reports') }}</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ stats.reports_count }}</p>
+                </div>
+                <i class="fas fa-file-medical text-3xl text-blue-500"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-500 text-sm">{{ gettext('Prescriptions') }}</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ stats.prescriptions_count }}</p>
+                </div>
+                <i class="fas fa-prescription-bottle text-3xl text-green-500"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-purple-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-500 text-sm">{{ gettext('Doctors') }}</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ stats.doctors_count }}</p>
+                </div>
+                <i class="fas fa-user-md text-3xl text-purple-500"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-orange-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-500 text-sm">{{ gettext('AI Analyses') }}</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ stats.reports_count }}</p>
+                </div>
+                <i class="fas fa-robot text-3xl text-orange-500"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Recent Reports -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-history mr-2"></i>{{ gettext('Recent Medical Reports') }}
+                    </h2>
+                </div>
+                
+                <div class="divide-y divide-gray-200">
+                    {% for report in recent_reports %}
+                    <div class="p-4 hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-stethoscope text-blue-500 mr-2"></i>
+                                    <span class="text-sm text-gray-500">{{ report.report_date.strftime('%d/%m/%Y') }}</span>
+                                    <span class="ml-3 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                        <i class="fas fa-microscope"></i> {{ gettext('AI Analysis') }}
+                                    </span>
+                                </div>
+                                
+                                {% set conditions = report.get_conditions() %}
+                                {% if conditions %}
+                                <p class="text-gray-800 font-medium mb-1">
+                                    <i class="fas fa-notes-medical text-gray-400 mr-1"></i>{{ conditions[:3]|join(', ') }}
+                                    {% if conditions|length > 3 %}...{% endif %}
+                                </p>
+                                {% endif %}
+                                
+                                {% set medications = report.get_medications() %}
+                                {% if medications %}
+                                <p class="text-gray-600 text-sm mb-2">
+                                    <i class="fas fa-pills text-gray-400 mr-1"></i>{{ gettext('Medications') }}: {{ medications[:3]|join(', ') }}
+                                    {% if medications|length > 3 %}...{% endif %}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <button onclick="viewReport({{ report.id }})" 
+                                    class="text-blue-600 hover:text-blue-800 transition ml-4">
+                                <i class="fas fa-eye mr-1"></i>{{ gettext('View Details') }}
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fas fa-file-alt fa-3x mb-3 text-gray-300"></i>
+                        <p>{{ gettext('No medical reports yet') }}</p>
+                        <p class="text-sm">{{ gettext('Visit your doctor to get your first analysis') }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if reports|length > 3 %}
+                <div class="border-t px-5 py-3 bg-gray-50 text-center">
+                    <a href="{{ url_for('patient.patient_reports_list') }}" class="text-blue-600 hover:underline">
+                        <i class="fas fa-arrow-right mr-1"></i>{{ gettext('View all reports') }} ({{ reports|length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="space-y-6">
+            
+            <!-- Doctors Card -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-pink-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-user-md mr-2"></i>{{ gettext('My Doctors') }}
+                    </h2>
+                </div>
+                <div class="p-4">
+                    {% if doctors %}
+                        {% for doctor in doctors %}
+                        <div class="flex items-center p-2 hover:bg-gray-50 rounded-lg transition">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-md text-purple-600"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <p class="font-medium text-gray-800">{{ doctor.name }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {% if doctor.specialty %}{{ doctor.specialty.name_en }}{% else %}{{ gettext('General Practitioner') }}{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-gray-400">
+                            <i class="fas fa-user-md fa-2x mb-2 text-gray-300"></i>
+                            <p class="text-sm">{{ gettext('No doctors assigned yet') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Prescriptions Card -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-teal-500 px-5 py-3">
+                    <h2 class="text-white font-semibold">
+                        <i class="fas fa-prescription-bottle mr-2"></i>{{ gettext('Recent Prescriptions') }}
+                    </h2>
+                </div>
+                <div class="p-4">
+                    {% if prescriptions %}
+                        {% for prescription in prescriptions[:3] %}
+                        <div class="mb-3 pb-3 border-b last:border-0">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm text-gray-500">
+                                        <i class="fas fa-calendar-alt mr-1"></i>{{ prescription.created_at.strftime('%d/%m/%Y') }}
+                                    </p>
+                                    {% if prescription.diagnosis %}
+                                    <p class="text-gray-700 text-sm mt-1">{{ prescription.diagnosis[:60] }}</p>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('prescription.view_prescription', prescription_id=prescription.id) }}" 
+                                   class="text-blue-600 hover:text-blue-800 text-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-gray-400">
+                            <i class="fas fa-prescription-bottle fa-2x mb-2 text-gray-300"></i>
+                            <p class="text-sm">{{ gettext('No prescriptions yet') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if prescriptions|length > 3 %}
+                <div class="border-t px-4 py-2 bg-gray-50 text-center">
+                    <a href="{{ url_for('patient.patient_prescriptions') }}" class="text-blue-600 text-sm hover:underline">
+                        {{ gettext('View all prescriptions') }} ({{ prescriptions|length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Alerts Card -->
+            {% if all_alerts %}
+            <div class="bg-yellow-50 rounded-xl shadow-md overflow-hidden border border-yellow-200">
+                <div class="bg-yellow-100 px-5 py-3 border-b border-yellow-200">
+                    <h2 class="font-semibold text-yellow-800">
+                        <i class="fas fa-bell mr-2"></i>{{ gettext('Medical Alerts') }}
+                    </h2>
+                </div>
+                <div class="p-4">
+                    {% for alert in all_alerts[:3] %}
+                    <div class="mb-2 flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm text-yellow-800">{{ alert.message }}</p>
+                            <p class="text-xs text-yellow-600">{{ alert.date.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Quick Action Buttons -->
+    <div class="mt-8 flex flex-wrap gap-4 justify-center">
+        <a href="{{ url_for('patient.patient_reports_list') }}" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <i class="fas fa-file-alt mr-2"></i>{{ gettext('View All Reports') }}
+        </a>
+        <a href="{{ url_for('patient.patient_prescriptions') }}" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            <i class="fas fa-prescription-bottle mr-2"></i>{{ gettext('My Prescriptions') }}
+        </a>
+        <a href="{{ url_for('patient.patient_doctors') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+            <i class="fas fa-user-md mr-2"></i>{{ gettext('My Doctors') }}
+        </a>
+        <a href="{{ url_for('auth.profile') }}" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+            <i class="fas fa-cog mr-2"></i>{{ gettext('Settings') }}
+        </a>
+    </div>
+</div>
+
+<!-- Report View Modal -->
+<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3 flex justify-between items-center">
+            <h3 class="text-white font-semibold">
+                <i class="fas fa-file-alt mr-2"></i>{{ gettext('Report Details') }}
+            </h3>
+            <button onclick="closeModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="modalContent" class="p-5">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+</div>
+
+<script>
+    async function viewReport(reportId) {
+        const modal = document.getElementById('reportModal');
+        const modalContent = document.getElementById('modalContent');
+        
+        modal.style.display = 'flex';
+        modalContent.innerHTML = '<div class="text-center py-8"><div class="loader mx-auto"></div><p class="mt-3">{{ gettext("Loading...") }}</p></div>';
+        
+        try {
+            const response = await fetch(`/report/${reportId}/export`);
+            const report = await response.json();
+            
+            const conditionsList = report.conditions?.length > 0
+                ? `<ul class="list-disc list-inside">${report.conditions.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">-</span>';
+            
+            const medicationsList = report.medications?.length > 0
+                ? `<ul class="list-disc list-inside">${report.medications.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">-</span>';
+            
+            const alertsList = report.alerts?.length > 0
+                ? `<ul class="list-disc list-inside">${report.alerts.map(a => `<li class="text-yellow-700">⚠️ ${escapeHtml(a)}</li>`).join('')}</ul>`
+                : '<span class="text-green-600">✓ {{ gettext("No alerts") }}</span>';
+            
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3 pb-3 border-b">
+                        <div><p class="text-sm text-gray-500">{{ gettext('Date') }}</p><p class="font-medium">${new Date(report.report_date).toLocaleDateString()}</p></div>
+                        <div><p class="text-sm text-gray-500">{{ gettext('Report ID') }}</p><p class="font-medium">#${report.id}</p></div>
+                    </div>
+                    <div><h4 class="font-semibold mb-2"><i class="fas fa-stethoscope text-blue-500 mr-2"></i>{{ gettext('Conditions') }}</h4><div class="bg-blue-50 p-3 rounded-lg">${conditionsList}</div></div>
+                    <div><h4 class="font-semibold mb-2"><i class="fas fa-pills text-blue-500 mr-2"></i>{{ gettext('Medications') }}</h4><div class="bg-green-50 p-3 rounded-lg">${medicationsList}</div></div>
+                    <div><h4 class="font-semibold mb-2"><i class="fas fa-exclamation-triangle text-blue-500 mr-2"></i>{{ gettext('Alerts') }}</h4><div class="bg-yellow-50 p-3 rounded-lg">${alertsList}</div></div>
+                    <div><h4 class="font-semibold mb-2"><i class="fas fa-align-left text-blue-500 mr-2"></i>{{ gettext('Summary') }}</h4><div class="bg-gray-50 p-3 rounded-lg">${escapeHtml(report.summary) || '-'}</div></div>
+                    <div class="pt-3 border-t flex justify-end gap-2">
+                        <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">{{ gettext('Close') }}</button>
+                        <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i class="fas fa-print mr-2"></i>{{ gettext('Print') }}</button>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            modalContent.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>{{ gettext("Error loading report") }}</p></div>';
+        }
+    }
+    
+    function closeModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    document.getElementById('reportModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+
+<style>
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}

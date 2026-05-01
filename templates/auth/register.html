@@ -1,0 +1,827 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Create Account') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-8 py-5 text-center">
+            <i class="fas fa-user-plus text-4xl text-white mb-2"></i>
+            <h1 class="text-2xl font-bold text-white">{{ gettext('Create Account') }}</h1>
+            <p class="text-blue-100 mt-1">{{ gettext('Join MedAI and start managing your medical reports') }}</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="px-8 pt-6">
+            <div class="flex items-center justify-between">
+                <!-- Step 1 -->
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="step-circle step-1 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                        1</div>
+                    <span class="text-xs mt-2 text-gray-500">{{ gettext('Account Type') }}</span>
+                </div>
+                <div class="step-line-1 flex-1 h-1 bg-gray-200 mx-2"></div>
+
+                <!-- Step 2 -->
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="step-circle step-2 w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold">
+                        2</div>
+                    <span class="text-xs mt-2 text-gray-500">{{ gettext('Basic Info') }}</span>
+                </div>
+                <div class="step-line-2 flex-1 h-1 bg-gray-200 mx-2"></div>
+
+                <!-- Step 3 -->
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="step-circle step-3 w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold">
+                        3</div>
+                    <span class="text-xs mt-2 text-gray-500">{{ gettext('Details') }}</span>
+                </div>
+                <div class="step-line-3 flex-1 h-1 bg-gray-200 mx-2"></div>
+
+                <!-- Step 4 -->
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="step-circle step-4 w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold">
+                        4</div>
+                    <span class="text-xs mt-2 text-gray-500">{{ gettext('Confirm') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-8">
+            <form method="POST" id="registerForm">
+
+                <!-- ==================== STEP 1: Account Type ==================== -->
+                <div id="step1" class="step-content">
+                    <div class="text-center mb-6">
+                        <i class="fas fa-user-circle text-5xl text-blue-500 mb-3"></i>
+                        <h2 class="text-xl font-bold text-gray-800">{{ gettext('Choose Account Type') }}</h2>
+                        <p class="text-gray-500 text-sm">{{ gettext('Select whether you are a patient or a doctor') }}
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Patient Card -->
+                        <div id="cardPatient"
+                            class="role-card border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 transition">
+                            <div
+                                class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-user text-3xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">{{ gettext('Patient') }}</h3>
+                            <p class="text-sm text-gray-500 mt-2">{{ gettext('Access your medical records, view reports
+                                and prescriptions') }}</p>
+                            <div id="patientSelected" class="mt-4 text-blue-600 text-sm font-medium hidden">✓ {{
+                                gettext('Selected') }}</div>
+                        </div>
+
+                        <!-- Doctor Card -->
+                        <div id="cardDoctor"
+                            class="role-card border-2 border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-500 transition">
+                            <div
+                                class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-user-md text-3xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">{{ gettext('Doctor') }}</h3>
+                            <p class="text-sm text-gray-500 mt-2">{{ gettext('Manage patients, create reports and
+                                prescriptions') }}</p>
+                            <div id="doctorSelected" class="mt-4 text-blue-600 text-sm font-medium hidden">✓ {{
+                                gettext('Selected') }}</div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="role" id="roleInput" value="">
+                </div>
+
+                <!-- ==================== STEP 2: Basic Information ==================== -->
+                <div id="step2" class="step-content" style="display: none;">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">{{ gettext('Basic Information') }}</h2>
+                    <p class="text-gray-500 text-sm mb-6">{{ gettext('Please provide your personal information') }}</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-user text-blue-500 mr-2"></i>{{ gettext('Full Name') }} <span
+                                    class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="name" id="fullName" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="{{ gettext('John Doe') }}">
+                        </div>
+
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-envelope text-blue-500 mr-2"></i>{{ gettext('Email Address') }} <span
+                                    class="text-red-500">*</span>
+                            </label>
+                            <input type="email" name="email" id="email" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="{{ gettext('john@example.com') }}">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>{{ gettext('Age') }}
+                            </label>
+                            <input type="number" name="age" id="age"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                placeholder="{{ gettext('30') }}">
+                        </div>
+                        <!-- بعد حقل Age -->
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-venus-mars text-blue-500 mr-2"></i>{{ gettext('Gender') }}
+                            </label>
+                            <select name="gender" id="gender"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                                <option value="">{{ gettext('Select Gender') }}</option>
+                                <option value="Male">{{ gettext('Male') }}</option>
+                                <option value="Female">{{ gettext('Female') }}</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-phone text-blue-500 mr-2"></i>{{ gettext('Phone') }}
+                            </label>
+                            <input type="tel" name="phone" id="phone"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                placeholder="{{ gettext('+213XXXXXXXXX') }}">
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-lock text-blue-500 mr-2"></i>{{ gettext('Password') }} <span
+                                    class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" name="password" id="passwordInput" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg pr-12"
+                                    placeholder="••••••">
+                                <button type="button" id="togglePassword"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">{{ gettext('Minimum 6 characters') }}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-check-circle text-blue-500 mr-2"></i>{{ gettext('Confirm Password') }}
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" name="confirm_password" id="confirmPasswordInput" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg pr-12"
+                                    placeholder="••••••">
+                                <button type="button" id="toggleConfirmPassword"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">{{ gettext('Please re-enter your password') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== STEP 3: Details (Dynamic based on role) ==================== -->
+                <div id="step3" class="step-content" style="display: none;">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">{{ gettext('Additional Information') }}</h2>
+                    <p class="text-gray-500 text-sm mb-6">{{ gettext('Please provide your professional or medical
+                        details') }}</p>
+
+                    <!-- Doctor Fields -->
+                    <div id="doctorFields" class="role-fields" style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>{{ gettext('Commune of
+                                    Working') }}
+                                </label>
+                                <select name="commune_id" id="communeSelect"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                                    <option value="">{{ gettext('Select Commune') }}</option>
+                                    {% for commune in communes %}
+                                    <option value="{{ commune.id }}">{{ commune.name_en }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-heartbeat text-blue-500 mr-2"></i>{{ gettext('Specialty') }}
+                                </label>
+                                <select name="specialty_id" id="specialtySelect"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                                    <option value="">{{ gettext('Select Specialty') }}</option>
+                                    {% for specialty in specialties %}
+                                    <option value="{{ specialty.id }}">{{ specialty.name_en }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-hospital text-blue-500 mr-2"></i>{{ gettext('Clinic / Cabinet
+                                    Name') }}
+                                    <span class="text-gray-400 text-sm">({{ gettext('Optional') }})</span>
+                                </label>
+                                <input type="text" name="clinic_name" id="clinicName"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                    placeholder="{{ gettext('Cabinet Dr. Ahmed Benali') }}">
+                            </div>
+
+                            <div class="col-span-2">
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-location-dot text-blue-500 mr-2"></i>{{ gettext('Full Address') }}
+                                    <span class="text-gray-400 text-sm">({{ gettext('Optional') }})</span>
+                                </label>
+                                <input type="text" name="clinic_address" id="clinicAddress"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                    placeholder="{{ gettext('123 Rue Didouche Mourad, Alger') }}">
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-phone-alt text-blue-500 mr-2"></i>{{ gettext('Clinic Phone') }}
+                                    <span class="text-gray-400 text-sm">({{ gettext('Optional') }})</span>
+                                </label>
+                                <input type="tel" name="clinic_phone" id="clinicPhone"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                    placeholder="{{ gettext('+213 23 45 67 89') }}">
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-envelope-open-text text-blue-500 mr-2"></i>{{ gettext('Clinic
+                                    Email') }}
+                                    <span class="text-gray-400 text-sm">({{ gettext('Optional') }})</span>
+                                </label>
+                                <input type="email" name="clinic_email" id="clinicEmail"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                    placeholder="{{ gettext('cabinet@drbenali.com') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Fields -->
+                    <div id="patientFields" class="role-fields" style="display: none;">
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-shield-alt text-blue-500 mr-2"></i>{{ gettext('Social Security Number
+                                (SSN)') }}
+                            </label>
+                            <input type="text" name="ssn" id="ssnInput"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                placeholder="{{ gettext('123-45-6789') }}">
+                            <p class="text-xs text-gray-400 mt-1">{{ gettext('Required for patients. Format:
+                                123-45-6789') }}</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-800 mb-3">
+                                <i class="fas fa-user-md text-blue-500 mr-2"></i>{{ gettext('Find Your Doctor') }}
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-gray-600 text-sm mb-1">{{ gettext('Commune') }}</label>
+                                    <select id="patientCommuneSelect" class="w-full px-3 py-2 border rounded-lg">
+                                        <option value="">{{ gettext('Select Commune') }}</option>
+                                        {% for commune in communes %}
+                                        <option value="{{ commune.id }}">{{ commune.name_en }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-600 text-sm mb-1">{{ gettext('Specialty') }}</label>
+                                    <select id="patientSpecialtySelect" class="w-full px-3 py-2 border rounded-lg">
+                                        <option value="">{{ gettext('Select Specialty') }}</option>
+                                        {% for specialty in specialties %}
+                                        <option value="{{ specialty.id }}">{{ specialty.name_en }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="button" id="findDoctorsBtn"
+                                class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-search"></i> {{ gettext('Find Doctors') }}
+                            </button>
+
+                            <div id="doctorsListContainer" class="mt-4 hidden">
+                                <label class="block text-gray-700 font-medium mb-2">{{ gettext('Available Doctors')
+                                    }}</label>
+                                <div id="doctorsList"
+                                    class="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-white"></div>
+                                <input type="hidden" name="doctor_ids" id="doctorIdsInput">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== STEP 4: Confirm ==================== -->
+                <div id="step4" class="step-content" style="display: none;">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">{{ gettext('Confirm Your Information') }}</h2>
+                    <p class="text-gray-500 text-sm mb-6">{{ gettext('Please review your information before submitting')
+                        }}</p>
+
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div id="confirmContent">
+                            <!-- Summary will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between mt-8">
+                    <button type="button" id="prevBtn"
+                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>{{ gettext('Back') }}
+                    </button>
+                    <button type="button" id="nextBtn"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        {{ gettext('Next') }} <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button type="submit" id="submitBtn"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                        style="display: none;">
+                        <i class="fas fa-check-circle mr-2"></i>{{ gettext('Create Account') }}
+                    </button>
+                </div>
+            </form>
+
+            <!-- Login Link -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    {{ gettext('Already have an account?') }}
+                    <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-medium">
+                        <i class="fas fa-sign-in-alt"></i> {{ gettext('Log In') }}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * ====================================================================
+     * REGISTER PAGE JAVASCRIPT - INDEX
+     * ====================================================================
+     * 1.  STEPPER CORE VARIABLES (السير المتحكم في الخطوات)
+     * 2.  DOM ELEMENTS REFERENCES (مراجع عناصر الصفحة)
+     * 3.  ROLE SELECTION SYSTEM (نظام اختيار نوع الحساب)
+     * 4.  STEP NAVIGATION (التنقل بين الخطوات)
+     * 5.  UI UPDATE FUNCTION (تحديث الواجهة)
+     * 6.  CONFIRM CONTENT GENERATOR (إنشاء محتوى التأكيد)
+     * 7.  VALIDATION FUNCTIONS (دوال التحقق من صحة البيانات)
+     * 8.  HELPER FUNCTIONS (دوال مساعدة)
+     * 9.  PASSWORD VISIBILITY TOGGLE (إظهار/إخفاء كلمة المرور)
+     * 10. FIND DOCTORS FOR PATIENTS (البحث عن الأطباء للمرضى)
+     * 11. FORM SUBMISSION (إرسال النموذج)
+     * ====================================================================
+     */
+
+    // ==================== 1. STEPPER CORE VARIABLES ====================
+    let currentStep = 1;           // الخطوة الحالية (1-4)
+    let selectedRole = null;       // الدور المختار ('patient' أو 'doctor')
+    let selectedDoctors = [];       // قائمة الأطباء المختارين للمريض
+
+    // ==================== 2. DOM ELEMENTS REFERENCES ====================
+    const steps = [1, 2, 3, 4];
+
+    // محتويات الخطوات
+    const stepContents = {
+        1: document.getElementById('step1'),
+        2: document.getElementById('step2'),
+        3: document.getElementById('step3'),
+        4: document.getElementById('step4')
+    };
+
+    // الدوائر الدالة على الخطوات
+    const stepCircles = {
+        1: document.querySelector('.step-1'),
+        2: document.querySelector('.step-2'),
+        3: document.querySelector('.step-3'),
+        4: document.querySelector('.step-4')
+    };
+
+    // الخطوط الفاصلة بين الخطوات
+    const stepLines = {
+        1: document.querySelector('.step-line-1'),
+        2: document.querySelector('.step-line-2'),
+        3: document.querySelector('.step-line-3')
+    };
+
+    // أزرار التنقل
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // ==================== 3. ROLE SELECTION SYSTEM ====================
+    // ==================== ROLE SELECTION ====================
+    // ==================== ROLE SELECTION ====================
+    const cardPatient = document.getElementById('cardPatient');
+    const cardDoctor = document.getElementById('cardDoctor');
+    const patientSelected = document.getElementById('patientSelected');
+    const doctorSelected = document.getElementById('doctorSelected');
+    const roleInput = document.getElementById('roleInput');
+
+    function selectRole(role) {
+        selectedRole = role;
+        roleInput.value = role;
+
+        // ✅ إخفاء الـ Selected من الكل أولاً
+        patientSelected.classList.add('hidden');
+        doctorSelected.classList.add('hidden');
+
+        // ✅ إزالة border من الكل
+        cardPatient.classList.remove('border-blue-500', 'bg-blue-50');
+        cardDoctor.classList.remove('border-blue-500', 'bg-blue-50');
+
+        // ✅ إظهار الـ Selected على الكارد المختار فقط
+        if (role === 'patient') {
+            cardPatient.classList.add('border-blue-500', 'bg-blue-50');
+            patientSelected.classList.remove('hidden');
+        } else {
+            cardDoctor.classList.add('border-blue-500', 'bg-blue-50');
+            doctorSelected.classList.remove('hidden');
+        }
+
+        // تفعيل زر Next
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    function resetRoleSelection() {
+        selectedRole = null;
+        roleInput.value = '';
+
+        // ✅ إعادة تعيين الكل
+        cardPatient.classList.remove('border-blue-500', 'bg-blue-50');
+        cardDoctor.classList.remove('border-blue-500', 'bg-blue-50');
+        patientSelected.classList.add('hidden');
+        doctorSelected.classList.add('hidden');
+
+        // تعطيل زر Next
+        nextBtn.disabled = true;
+        nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    // ربط الأحداث
+    cardPatient.addEventListener('click', () => selectRole('patient'));
+    cardDoctor.addEventListener('click', () => selectRole('doctor'));
+
+    // ==================== STEP NAVIGATION ====================
+    function nextStep() {
+        if (validateStep()) {
+            if (currentStep < 4) {
+                currentStep++;
+                updateStepUI();
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+
+            if (currentStep === 1) {
+                resetRoleSelection();
+            }
+
+            updateStepUI();
+        }
+    }
+
+    prevBtn.addEventListener('click', prevStep);
+    nextBtn.addEventListener('click', nextStep);
+
+    // ==================== 5. UI UPDATE FUNCTION ====================
+    /**
+     * تحديث واجهة المستخدم بناءً على الخطوة الحالية
+     * - إظهار/إخفاء محتوى الخطوات
+     * - تحديث الدوائر والخطوط
+     * - إظهار/إخفاء أزرار Back/Next/Submit
+     * - تحديث حقول الخطوة 3 حسب الدور
+     */
+    function updateStepUI() {
+        // 5.1 إظهار/إخفاء محتويات الخطوات
+        for (let i = 1; i <= 4; i++) {
+            if (stepContents[i]) {
+                stepContents[i].style.display = i === currentStep ? 'block' : 'none';
+            }
+        }
+
+        // 5.2 تحديث الدوائر
+        for (let i = 1; i <= 4; i++) {
+            const circle = stepCircles[i];
+            if (circle) {
+                if (i < currentStep) {
+                    // خطوة مكتملة (علامة صح)
+                    circle.classList.remove('bg-gray-200', 'text-gray-500');
+                    circle.classList.add('bg-green-500', 'text-white');
+                    circle.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+                } else if (i === currentStep) {
+                    // الخطوة الحالية (زرقاء)
+                    circle.classList.remove('bg-gray-200', 'text-gray-500', 'bg-green-500');
+                    circle.classList.add('bg-blue-600', 'text-white');
+                    circle.innerHTML = i;
+                } else {
+                    // خطوة قادمة (رمادية)
+                    circle.classList.remove('bg-blue-600', 'bg-green-500', 'text-white');
+                    circle.classList.add('bg-gray-200', 'text-gray-500');
+                    circle.innerHTML = i;
+                }
+            }
+        }
+
+        // 5.3 تحديث الخطوط الفاصلة
+        for (let i = 1; i <= 3; i++) {
+            const line = stepLines[i];
+            if (line) {
+                if (i < currentStep) {
+                    line.classList.remove('bg-gray-200');
+                    line.classList.add('bg-green-500');
+                } else {
+                    line.classList.remove('bg-green-500');
+                    line.classList.add('bg-gray-200');
+                }
+            }
+        }
+
+        // 5.4 تحديث الأزرار
+        if (currentStep === 1) {
+            prevBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'inline-flex';
+        }
+
+        if (currentStep === 4) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-flex';
+        } else {
+            nextBtn.style.display = 'inline-flex';
+            submitBtn.style.display = 'none';
+        }
+
+        // 5.5 تحديث حقول الخطوة 3 حسب الدور المختار
+        if (currentStep === 3 && selectedRole) {
+            const doctorFields = document.getElementById('doctorFields');
+            const patientFields = document.getElementById('patientFields');
+
+            if (selectedRole === 'doctor') {
+                doctorFields.style.display = 'block';
+                patientFields.style.display = 'none';
+            } else {
+                doctorFields.style.display = 'none';
+                patientFields.style.display = 'block';
+            }
+        }
+
+        // 5.6 تحديث محتوى صفحة التأكيد
+        if (currentStep === 4) {
+            updateConfirmContent();
+        }
+    }
+
+    // ==================== 6. CONFIRM CONTENT GENERATOR ====================
+    /**
+     * إنشاء محتوى صفحة التأكيد (الخطوة 4)
+     * يعرض ملخص المعلومات المدخلة قبل الإرسال
+     */
+    function updateConfirmContent() {
+        const confirmContent = document.getElementById('confirmContent');
+        const role = roleInput.value;
+        const name = document.getElementById('fullName').value || '-';
+        const email = document.getElementById('email').value || '-';
+        const age = document.getElementById('age').value || '-';
+        const gender = document.getElementById('gender')?.value || '-';
+        const phone = document.getElementById('phone').value || '-';
+
+        let html = `
+    <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4 pb-3 border-b">
+            <div><p class="text-sm text-gray-500">{{ gettext('Account Type') }}</p><p class="font-medium">${role === 'doctor' ? '👨‍⚕️ Doctor' : '👤 Patient'}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Full Name') }}</p><p class="font-medium">${escapeHtml(name)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Email') }}</p><p class="font-medium">${escapeHtml(email)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Age') }}</p><p class="font-medium">${escapeHtml(age)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Gender') }}</p><p class="font-medium">${escapeHtml(gender)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Phone') }}</p><p class="font-medium">${escapeHtml(phone)}</p></div>
+        </div>
+`;
+
+        if (role === 'doctor') {
+            const commune = document.getElementById('communeSelect');
+            const specialty = document.getElementById('specialtySelect');
+            const clinicName = document.getElementById('clinicName').value || '-';
+            const clinicAddress = document.getElementById('clinicAddress').value || '-';
+            const clinicPhone = document.getElementById('clinicPhone').value || '-';
+            const clinicEmail = document.getElementById('clinicEmail').value || '-';
+
+            html += `
+        <div class="grid grid-cols-2 gap-4">
+            <div><p class="text-sm text-gray-500">{{ gettext('Commune') }}</p><p class="font-medium">${commune.options[commune.selectedIndex]?.text || '-'}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Specialty') }}</p><p class="font-medium">${specialty.options[specialty.selectedIndex]?.text || '-'}</p></div>
+            <div class="col-span-2"><p class="text-sm text-gray-500">{{ gettext('Clinic Name') }}</p><p class="font-medium">${escapeHtml(clinicName)}</p></div>
+            <div class="col-span-2"><p class="text-sm text-gray-500">{{ gettext('Clinic Address') }}</p><p class="font-medium">${escapeHtml(clinicAddress)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Clinic Phone') }}</p><p class="font-medium">${escapeHtml(clinicPhone)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Clinic Email') }}</p><p class="font-medium">${escapeHtml(clinicEmail)}</p></div>
+        </div>
+    `;
+        } else {
+            const ssn = document.getElementById('ssnInput').value || '-';
+            const doctorIds = document.getElementById('doctorIdsInput').value;
+
+            html += `
+        <div class="grid grid-cols-2 gap-4">
+            <div><p class="text-sm text-gray-500">{{ gettext('SSN') }}</p><p class="font-medium">${escapeHtml(ssn)}</p></div>
+            <div><p class="text-sm text-gray-500">{{ gettext('Selected Doctors') }}</p><p class="font-medium">${doctorIds ? doctorIds.split(',').length + ' doctor(s) selected' : 'None'}</p></div>
+        </div>
+    `;
+        }
+
+        html += `</div>`;
+        confirmContent.innerHTML = html;
+    }
+
+    // ==================== 7. VALIDATION FUNCTIONS ====================
+    /**
+     * التحقق من صحة البيانات في الخطوة الحالية
+     * @returns {boolean} true إذا كانت البيانات صحيحة
+     */
+    function validateStep() {
+        if (currentStep === 1) {
+            if (!selectedRole) {
+                alert('{{ gettext("Please select an account type") }}');
+                return false;
+            }
+        } else if (currentStep === 2) {
+            const name = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (!name) {
+                alert('{{ gettext("Please enter your full name") }}');
+                return false;
+            }
+            if (!email) {
+                alert('{{ gettext("Please enter your email address") }}');
+                return false;
+            }
+            if (!email.includes('@')) {
+                alert('{{ gettext("Please enter a valid email address") }}');
+                return false;
+            }
+            if (!password || password.length < 6) {
+                alert('{{ gettext("Password must be at least 6 characters") }}');
+                return false;
+            }
+        } else if (currentStep === 3) {
+            if (selectedRole === 'patient') {
+                const ssn = document.getElementById('ssnInput').value.trim();
+                if (!ssn) {
+                    alert('{{ gettext("SSN is required for patient registration") }}');
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // ==================== 8. HELPER FUNCTIONS ====================
+    /**
+     * تحويل النص إلى نص آمن لمنع هجمات XSS
+     * @param {string} text - النص الأصلي
+     * @returns {string} النص الآمن
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // تهيئة الواجهة
+    updateStepUI();
+
+    // ==================== 9. PASSWORD VISIBILITY TOGGLE ====================
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('passwordInput');
+
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+
+    // ==================== 10. FIND DOCTORS FOR PATIENTS ====================
+    const findBtn = document.getElementById('findDoctorsBtn');
+    const communeSelect = document.getElementById('patientCommuneSelect');
+    const specialtySelect = document.getElementById('patientSpecialtySelect');
+    const doctorsContainer = document.getElementById('doctorsListContainer');
+    const doctorsList = document.getElementById('doctorsList');
+    const doctorIdsInput = document.getElementById('doctorIdsInput');
+
+    if (findBtn) {
+        findBtn.addEventListener('click', async function () {
+            const communeId = communeSelect.value;
+            const specialtyId = specialtySelect.value;
+
+            if (!communeId || !specialtyId) {
+                alert('{{ gettext("Please select both commune and specialty") }}');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/auth/get-doctors?commune_id=${communeId}&specialty_id=${specialtyId}`);
+                const data = await response.json();
+
+                doctorsList.innerHTML = '';
+
+                if (data.doctors.length === 0) {
+                    doctorsList.innerHTML = '<div class="text-center text-gray-500 py-4">{{ gettext("No doctors found") }}</div>';
+                } else {
+                    data.doctors.forEach(doc => {
+                        const isChecked = selectedDoctors.includes(doc.id);
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center p-2 hover:bg-gray-50 rounded border';
+                        div.innerHTML = `
+                    <input type="checkbox" value="${doc.id}" id="doc_${doc.id}" class="mr-3 doctor-checkbox" ${isChecked ? 'checked' : ''}>
+                    <label for="doc_${doc.id}" class="flex-1 cursor-pointer">
+                        <div class="font-medium">${escapeHtml(doc.name)}</div>
+                        <div class="text-sm text-gray-500">${escapeHtml(doc.specialty)}</div>
+                    </label>
+                    <i class="fas fa-phone-alt text-gray-400 text-sm"> ${escapeHtml(doc.phone)}</i>
+                `;
+                        doctorsList.appendChild(div);
+                    });
+
+                    document.querySelectorAll('.doctor-checkbox').forEach(cb => {
+                        cb.addEventListener('change', function () {
+                            const id = parseInt(this.value);
+                            if (this.checked) {
+                                if (!selectedDoctors.includes(id)) selectedDoctors.push(id);
+                            } else {
+                                selectedDoctors = selectedDoctors.filter(i => i !== id);
+                            }
+                            doctorIdsInput.value = selectedDoctors.join(',');
+                        });
+                    });
+                }
+
+                doctorsContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('{{ gettext("Error finding doctors") }}');
+            }
+        });
+    }
+
+    // ==================== 11. FORM SUBMISSION ====================
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', function (e) {
+        if (!selectedRole) {
+            e.preventDefault();
+            alert('{{ gettext("Please select an account type") }}');
+            return false;
+        }
+
+        if (selectedRole === 'patient') {
+            const ssn = document.getElementById('ssnInput').value;
+            if (!ssn || ssn.trim() === '') {
+                e.preventDefault();
+                alert('{{ gettext("SSN is required for patient registration") }}');
+                return false;
+            }
+        }
+
+        return true;
+    });
+</script>
+
+<style>
+    .role-card {
+        transition: all 0.3s ease;
+    }
+
+    .role-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .step-circle {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

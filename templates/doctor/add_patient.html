@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Add Patient') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center mb-6">
+        <a href="{{ url_for('doctor.doctor_dashboard') }}" class="text-gray-500 hover:text-gray-700 mr-4">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-user-plus text-blue-600 mr-3"></i>{{ gettext('Add New Patient') }}
+        </h1>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <form method="POST" id="addPatientForm">
+            <!-- Personal Information Section -->
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-address-card text-blue-500 mr-2"></i>{{ gettext('Personal Information') }}
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Full Name -->
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-user text-blue-500 mr-2"></i>{{ gettext('Full Name') }} <span
+                                class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="{{ gettext('John Doe') }}">
+                    </div>
+
+                    <!-- Age -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>{{ gettext('Age') }}
+                        </label>
+                        <input type="number" name="age" min="0" max="150"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('30') }}">
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-phone text-blue-500 mr-2"></i>{{ gettext('Phone') }}
+                        </label>
+                        <input type="tel" name="phone"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('+213XXXXXXXXX') }}">
+                    </div>
+
+                    <!-- SSN -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-id-card text-blue-500 mr-2"></i>{{ gettext('Social Security Number (SSN)')
+                            }}
+                        </label>
+                        <input type="text" name="ssn" id="ssnInput"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('123-45-6789') }}">
+                        <p class="text-xs text-gray-400 mt-1">{{ gettext('Required only if creating an account') }}</p>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-envelope text-blue-500 mr-2"></i>{{ gettext('Email Address') }}
+                        </label>
+                        <input type="email" name="email" id="emailInput"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('patient@example.com') }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Options Section -->
+            <div class="p-6 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" name="create_account" id="createAccountCheckbox" value="yes"
+                        class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                    <label for="createAccountCheckbox" class="ml-2 text-gray-700 font-medium cursor-pointer">
+                        <i class="fas fa-user-circle text-blue-500 mr-1"></i>{{ gettext('Create a patient account (with
+                        email and password)') }}
+                    </label>
+                </div>
+
+                <!-- Account Fields (Hidden by default) -->
+                <div id="accountFields" class="hidden pl-6 border-l-2 border-blue-300 mt-3">
+                    <p class="text-sm text-gray-500 mb-3">
+                        <i class="fas fa-info-circle"></i> {{ gettext('The patient will receive a verification code by
+                        email') }}
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-envelope text-blue-500 mr-2"></i>{{ gettext('Email Address') }} <span
+                                    class="text-red-500">*</span>
+                            </label>
+                            <input type="email" name="account_email" id="accountEmail"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder="{{ gettext('patient@example.com') }}">
+                            <p class="text-xs text-gray-400 mt-1">{{ gettext('Same as above if not specified') }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">
+                                <i class="fas fa-lock text-blue-500 mr-2"></i>{{ gettext('Password') }} <span
+                                    class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" name="password" id="passwordInput"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10"
+                                    placeholder="{{ gettext('Minimum 6 characters') }}">
+                                <button type="button" id="togglePassword"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="p-6 bg-gray-50 flex justify-end gap-3">
+                <a href="{{ url_for('doctor.doctor_dashboard') }}"
+                    class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                    <i class="fas fa-times mr-2"></i>{{ gettext('Cancel') }}
+                </a>
+                <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-save mr-2"></i>{{ gettext('Add Patient') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Toggle Account Fields
+    const createAccountCheckbox = document.getElementById('createAccountCheckbox');
+    const accountFields = document.getElementById('accountFields');
+    const ssnInput = document.getElementById('ssnInput');
+    const emailInput = document.getElementById('emailInput');
+    const accountEmail = document.getElementById('accountEmail');
+    const passwordInput = document.getElementById('passwordInput');
+
+    if (createAccountCheckbox) {
+        createAccountCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                accountFields.classList.remove('hidden');
+                ssnInput.required = true;
+                passwordInput.required = true;
+                if (emailInput.value) {
+                    accountEmail.value = emailInput.value;
+                }
+            } else {
+                accountFields.classList.add('hidden');
+                ssnInput.required = false;
+                passwordInput.required = false;
+                accountEmail.value = '';
+            }
+        });
+    }
+
+    // Copy email from main field to account email
+    if (emailInput && accountEmail) {
+        emailInput.addEventListener('input', function () {
+            if (createAccountCheckbox.checked && !accountEmail.value) {
+                accountEmail.value = this.value;
+            }
+        });
+    }
+
+    // Toggle Password Visibility
+    const togglePassword = document.getElementById('togglePassword');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+
+    // Form Validation
+    const form = document.getElementById('addPatientForm');
+    form.addEventListener('submit', function (e) {
+        const isCreatingAccount = createAccountCheckbox.checked;
+
+        if (isCreatingAccount) {
+            const ssn = ssnInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!ssn) {
+                e.preventDefault();
+                alert('{{ gettext("SSN is required when creating an account") }}');
+                return false;
+            }
+
+            if (!password || password.length < 6) {
+                e.preventDefault();
+                alert('{{ gettext("Password must be at least 6 characters") }}');
+                return false;
+            }
+        }
+
+        return true;
+    });
+</script>
+{% endblock %}

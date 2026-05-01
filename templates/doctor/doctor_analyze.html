@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Medical Analysis') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a href="{{ url_for('doctor.patient_reports', patient_id=patient.id) }}"
+                class="text-gray-500 hover:text-gray-700 mr-4">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-microscope text-blue-600 mr-3"></i>{{ gettext('Medical Analysis') }}
+            </h1>
+        </div>
+        <div class="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg">
+            <i class="fas fa-user mr-2"></i>{{ gettext('Patient') }}: {{ patient.name }}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Left Column: Upload Section -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>{{ gettext('Upload Medical Documents') }}
+                </h2>
+            </div>
+
+            <div class="p-5">
+                <!-- Dropzone -->
+                <div id="dropzone"
+                    class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                    <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-600 font-medium">{{ gettext('Drag & Drop your medical images here') }}</p>
+                    <p class="text-sm text-gray-500 mt-1">{{ gettext('PNG, JPG, JPEG, GIF (Multiple images allowed)') }}
+                    </p>
+                    <input type="file" id="quickReportImage" multiple accept="image/*" class="hidden">
+                    <button type="button" id="selectFilesBtn"
+                        class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-folder-open mr-2"></i>{{ gettext('Select Files') }}
+                    </button>
+                </div>
+
+                <!-- Image Preview -->
+                <div id="imagePreview" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+
+                <!-- Status Message -->
+                <div id="analysisStatus" class="hidden mt-4 p-3 rounded-lg"></div>
+
+                <!-- Analyze Button -->
+                <div class="mt-6">
+                    <button id="analyzeBtn" disabled
+                        class="w-full bg-gradient-to-r from-blue-600 to-teal-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-play-circle mr-2"></i>{{ gettext('Start Analysis') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Results Section -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-teal-500 px-5 py-3">
+                <h2 class="text-white font-semibold">
+                    <i class="fas fa-chart-bar mr-2"></i>{{ gettext('Analysis Results') }}
+                </h2>
+            </div>
+
+            <div class="p-5">
+                <!-- Loading Indicator -->
+                <div id="loading" class="hidden text-center py-8">
+                    <div class="loader mx-auto"></div>
+                    <p class="mt-3 text-gray-600">{{ gettext('AI is analyzing your medical documents...') }}</p>
+                </div>
+
+                <!-- Results Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left">{{ gettext('Date') }}</th>
+                                <th class="px-3 py-2 text-left">{{ gettext('Conditions') }}</th>
+                                <th class="px-3 py-2 text-left">{{ gettext('Medications') }}</th>
+                                <th class="px-3 py-2 text-left">{{ gettext('Alerts') }}</th>
+                                <th class="px-3 py-2 text-left">{{ gettext('Summary') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultTableBody">
+                            <tr>
+                                <td colspan="5" class="px-3 py-8 text-center text-gray-400">
+                                    {{ gettext('Upload images to see analysis results') }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 mt-6" id="actionButtons" style="display: none;">
+                    <button id="saveReportBtn"
+                        class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-save mr-2"></i>{{ gettext('Save Report') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .status-message.info {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .status-message.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .status-message.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .image-preview {
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+    }
+
+    .remove-image {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .remove-image:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+    // ==================== DOM Elements ====================
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('quickReportImage');
+    const selectFilesBtn = document.getElementById('selectFilesBtn');
+    const imagePreview = document.getElementById('imagePreview');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loading');
+    const analysisStatus = document.getElementById('analysisStatus');
+    const resultTableBody = document.getElementById('resultTableBody');
+    const actionButtons = document.getElementById('actionButtons');
+
+    let selectedFiles = [];
+
+    // ==================== Helper Functions ====================
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ==================== analyzeReports Function ====================
+    async function analyzeReports(imageFiles, patientId = null) {
+        if (!imageFiles || imageFiles.length === 0) {
+            alert("{{ gettext('Please select at least one file') }}");
+            return;
+        }
+
+        analysisStatus.style.display = "block";
+        analysisStatus.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
+        analysisStatus.className = "status-message info";
+
+        let allText = "";
+        let successCount = 0;
+        let imagePaths = [];
+
+        for (let i = 0; i < imageFiles.length; i++) {
+            const file = imageFiles[i];
+
+            analysisStatus.textContent = `📤 Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const ocrResponse = await fetch("/ocr", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!ocrResponse.ok) {
+                    console.error(`OCR failed for ${file.name}`);
+                    continue;
+                }
+
+                const ocrData = await ocrResponse.json();
+                allText += `\n\n--- Page ${i + 1}: ${file.name} ---\n${ocrData.text}\n`;
+                imagePaths.push(ocrData.image_path);
+                successCount++;
+
+            } catch (error) {
+                console.error(`Error processing ${file.name}:`, error);
+            }
+        }
+
+        if (successCount === 0) {
+            analysisStatus.textContent = "❌ No images could be processed";
+            analysisStatus.className = "status-message error";
+            return;
+        }
+
+        analysisStatus.textContent = `🔍 Analyzing ${successCount} images with AI...`;
+
+        const prompt = `Extract medical information from this complete medical report and return JSON.
+
+Medical Report:
+${allText.substring(0, 4000)}
+
+Return exactly this format:
+{
+"conditions": [],
+"medications": [],
+"alerts": [],
+"summary": ""
+}`;
+
+        try {
+            const aiResponse = await puter.ai.chat(prompt);
+
+            let analysis;
+            try {
+                let content;
+                if (aiResponse.message && aiResponse.message.content) {
+                    content = aiResponse.message.content;
+                } else if (aiResponse.content) {
+                    content = aiResponse.content;
+                } else if (typeof aiResponse === 'string') {
+                    content = aiResponse;
+                } else {
+                    content = JSON.stringify(aiResponse);
+                }
+
+                let cleanContent = content.trim();
+                if (cleanContent.startsWith('```json')) {
+                    cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+                } else if (cleanContent.startsWith('```')) {
+                    cleanContent = cleanContent.replace(/```\n?/g, '');
+                }
+
+                analysis = JSON.parse(cleanContent);
+                analysis.conditions = analysis.conditions || [];
+                analysis.medications = analysis.medications || [];
+                analysis.alerts = analysis.alerts || [];
+                analysis.summary = analysis.summary || "No summary provided";
+
+            } catch (e) {
+                console.log("Parse error, using fallback:", e);
+                analysis = {
+                    summary: "Analysis completed. Please consult a doctor for accurate interpretation.",
+                    conditions: [],
+                    medications: [],
+                    alerts: []
+                };
+            }
+
+            // Display results in table
+            const currentDate = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            const conditionsList = analysis.conditions?.length > 0
+                ? `<ul class="list-disc list-inside">${analysis.conditions.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">{{ gettext("None identified") }}</span>';
+
+            const medicationsList = analysis.medications?.length > 0
+                ? `<ul class="list-disc list-inside">${analysis.medications.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
+                : '<span class="text-gray-400">{{ gettext("None identified") }}</span>';
+
+            const alertsList = analysis.alerts?.length > 0
+                ? `<ul class="list-disc list-inside">${analysis.alerts.map(a => `<li class="text-yellow-700">⚠️ ${escapeHtml(a)}</li>`).join('')}</ul>`
+                : '<span class="text-green-600"><i class="fas fa-check-circle"></i> {{ gettext("No alerts") }}</span>';
+
+            resultTableBody.innerHTML = `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="px-3 py-3 font-medium">${currentDate}</td>
+                <td class="px-3 py-3">${conditionsList}</td>
+                <td class="px-3 py-3">${medicationsList}</td>
+                <td class="px-3 py-3">${alertsList}</td>
+                <td class="px-3 py-3">${escapeHtml(analysis.summary)}</td>
+            </tr>
+        `;
+
+            analysisStatus.textContent = "✅ Analysis complete!";
+            analysisStatus.className = "status-message success";
+
+            // Save to database if patientId is provided
+            if (patientId && imagePaths.length > 0) {
+                try {
+                    const saveResponse = await fetch("/report/save-report", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            patient_id: patientId,
+                            image_paths: imagePaths,
+                            conditions: analysis.conditions || [],
+                            medications: analysis.medications || [],
+                            alerts: analysis.alerts || [],
+                            summary: analysis.summary || "Analysis complete"
+                        })
+                    });
+
+                    if (saveResponse.ok) {
+                        console.log("Report saved successfully");
+                    }
+                } catch (e) {
+                    console.error("Save error:", e);
+                }
+            }
+
+            // Show action buttons
+            actionButtons.style.display = 'flex';
+
+            // Store for save button
+            window.lastAnalysis = analysis;
+            window.lastImagePaths = imagePaths;
+
+            return analysis;
+
+        } catch (error) {
+            console.error("Error:", error);
+            analysisStatus.textContent = "❌ Error: " + error.message;
+            analysisStatus.className = "status-message error";
+        }
+    }
+
+    // ==================== File Handling Functions ====================
+    function handleFiles(files) {
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+
+            selectedFiles.push(file);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.className = 'image-preview';
+                div.id = `preview_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                div.innerHTML = `
+                <img src="${e.target.result}" alt="${file.name}">
+                <button type="button" class="remove-image" onclick="removeImage('${file.name.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+                imagePreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+        analyzeBtn.disabled = selectedFiles.length === 0;
+
+        // Update file input
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(f => dataTransfer.items.add(f));
+        fileInput.files = dataTransfer.files;
+    }
+
+    window.removeImage = (name) => {
+        selectedFiles = selectedFiles.filter(f => f.name !== name);
+        const previewDiv = document.getElementById(`preview_${name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (previewDiv) previewDiv.remove();
+
+        // Update file input
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(f => dataTransfer.items.add(f));
+        fileInput.files = dataTransfer.files;
+
+        analyzeBtn.disabled = selectedFiles.length === 0;
+    };
+
+    // ==================== Event Listeners ====================
+    dropzone.addEventListener('click', () => fileInput.click());
+    selectFilesBtn.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-blue-500', 'bg-blue-50');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('border-blue-500', 'bg-blue-50');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-blue-500', 'bg-blue-50');
+        handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(Array.from(e.target.files));
+    });
+
+    // Analyze button click
+    analyzeBtn.addEventListener('click', async () => {
+        if (selectedFiles.length === 0) {
+            alert('{{ gettext("Please select images to analyze") }}');
+            return;
+        }
+
+        // Reset UI
+        loading.classList.remove('hidden');
+        analysisStatus.style.display = 'none';
+        resultTableBody.innerHTML = '';
+        actionButtons.style.display = 'none';
+        analyzeBtn.disabled = true;
+
+        try {
+            await analyzeReports(selectedFiles, {{ patient.id }});
+    } catch (error) {
+        console.error('Analysis error:', error);
+        analysisStatus.style.display = 'block';
+        analysisStatus.textContent = '❌ Error during analysis';
+        analysisStatus.className = 'status-message error';
+    } finally {
+        loading.classList.add('hidden');
+        analyzeBtn.disabled = false;
+    }
+});
+
+    // Save button handler
+    document.getElementById('saveReportBtn')?.addEventListener('click', async () => {
+        const saveBtn = document.getElementById('saveReportBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>{{ gettext("Saving...") }}';
+
+        analysisStatus.style.display = 'block';
+        analysisStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i>{{ gettext("Report saved successfully!") }}';
+        analysisStatus.className = 'status-message success';
+        setTimeout(() => {
+            analysisStatus.style.display = 'none';
+        }, 3000);
+
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>{{ gettext("Save Report") }}';
+    });
+</script>
+{% endblock %}

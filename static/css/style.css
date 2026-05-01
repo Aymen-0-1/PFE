@@ -1,0 +1,276 @@
+/* ==================== Root Variables ==================== */
+:root {
+    --sky-blue: #38bdf8;
+    --sky-blue-dark: #0ea5e9;
+    --sky-blue-bg: #0284c7;
+    --sky-blue-soft: #e0f2fe;
+    --text-main: #1e293b;
+}
+
+/* ==================== Base Styles ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Cairo', sans-serif;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(255, 255, 255, 0.95)), url('/static/images/back6.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--text-main);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ==================== Custom Scrollbar ==================== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--sky-blue);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--sky-blue-dark);
+}
+
+/* ==================== Header Styles ==================== */
+header {
+    background: linear-gradient(135deg, var(--sky-blue-bg), var(--sky-blue-dark));
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* جميع النصوص والأيقونات في الهيدر */
+header * {
+    color: white !important;
+}
+
+/* زر تبديل السايدبار */
+header button {
+    color: white !important;
+}
+header button:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* روابط تسجيل الدخول والتسجيل */
+header a:not(.lang-option) {
+    color: white !important;
+}
+header a:not(.lang-option):hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* زر التسجيل */
+header .bg-blue-600 {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+header .bg-blue-600:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* أيقونة المستخدم */
+header .bg-blue-500 {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ===== القوائم المنسدلة ===== */
+/* قائمة اللغات */
+header #langMenu {
+    background: white !important;
+}
+header .lang-option {
+    color: #1e293b !important;
+    background: white !important;
+}
+header .lang-option:hover {
+    background: var(--sky-blue-soft) !important;
+    color: var(--sky-blue-dark) !important;
+}
+
+/* قائمة المستخدم - تظهر بوضوح */
+#userMenu,
+header #userMenu {
+background: white !important;
+border: 1px solid #e5e7eb !important;
+}
+
+#userMenu *,
+header #userMenu * {
+color: #1e293b !important;
+}
+
+#userMenu .border-b,
+header #userMenu .border-b {
+border-color: #e5e7eb !important;
+}
+
+#userMenu a,
+header #userMenu a {
+color: #374151 !important;
+}
+
+#userMenu a i,
+header #userMenu a i {
+color: #6b7280 !important;
+}
+
+#userMenu a:hover,
+header #userMenu a:hover {
+    background: #e0f2fe !important;
+}
+
+#userMenu a:hover span,
+header #userMenu a:hover span {
+    color: #0284c7 !important;
+}
+
+#userMenu a:last-child span,
+header #userMenu a:last-child span {
+    color: #dc2626 !important;
+}
+
+#userMenu a:last-child:hover,
+header #userMenu a:last-child:hover {
+    background: #fee2e2 !important;
+}
+
+#userMenu hr,
+header #userMenu hr {
+    border-color: #e5e7eb !important;
+}
+/* تأكد من أن القائمة تظهر */
+/* ==================== Sidebar Styles ==================== */
+.sidebar {
+    background: linear-gradient(180deg, var(--sky-blue-bg) 0%, var(--sky-blue-dark) 100%);
+    border-right: none;
+    
+}
+
+/* روابط السايدبار */
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: all 0.15s ease;
+}
+.sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    transform: translateX(5px);
+}
+.sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+}
+
+/* أيقونات السايدبار */
+.sidebar .nav-link i {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.sidebar .nav-link.active i {
+    color: white !important;
+}
+
+/* معلومات المستخدم في السايدبار */
+.sidebar .border-b {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.sidebar .bg-blue-100 {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+.sidebar .text-blue-600 {
+    color: white !important;
+}
+.sidebar h3 {
+    color: white !important;
+}
+.sidebar .text-gray-500 {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* الفواصل في السايدبار */
+.sidebar hr {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* تذييل السايدبار */
+.sidebar .border-t {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.sidebar .text-gray-400 {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ==================== Footer Styles ==================== */
+footer {
+    background: linear-gradient(135deg, var(--sky-blue-bg), var(--sky-blue-dark));
+    border-top: none !important;
+}
+footer * {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+footer a:hover {
+    color: white !important;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+    .sidebar-hidden {
+        transform: translateX(-100%);
+    }
+    [dir="rtl"] .sidebar-hidden {
+        transform: translateX(100%);
+    }
+}
+
+@media print {
+    .no-print { display: none !important; }
+}
+
+.card-hover {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.sidebar-transition {
+    transition: transform 0.3s ease-in-out;
+}
+/* Force dark text in notifications dropdown */
+#notificationsDropdown,
+#notificationsDropdown * {
+    color: #1f2937 !important;
+}
+
+#notificationsDropdown .text-gray-400,
+#notificationsDropdown .text-gray-500,
+#notificationsDropdown .text-gray-600 {
+    color: #6b7280 !important;
+}
+
+#notificationsDropdown h3,
+#notificationsDropdown .font-semibold {
+    color: #1f2937 !important;
+}
+
+#notificationsList p {
+    color: #1f2937 !important;
+}
+
+/* Keep button text white */
+#notificationsDropdown button {
+    color: white !important;
+}
+
+#notificationsDropdown button i {
+    color: white !important;
+}

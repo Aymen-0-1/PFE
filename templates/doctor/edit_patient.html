@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gettext('Edit Patient') }} - AI-Powered Medic{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center mb-6">
+        <a href="{{ url_for('doctor.patient_reports', patient_id=patient.id) }}"
+            class="text-gray-500 hover:text-gray-700 mr-4">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-user-edit text-blue-600 mr-3"></i>{{ gettext('Edit Patient') }}
+        </h1>
+    </div>
+
+    <!-- Patient Info Card -->
+    <div class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 mb-6 flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                <i class="fas fa-user text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-gray-500">{{ gettext('Patient ID') }}: #{{ patient.id }}</p>
+                <p class="text-sm text-gray-500">{{ gettext('Created') }}: {{ patient.created_at.strftime('%d/%m/%Y') if
+                    patient.created_at else '-' }}</p>
+            </div>
+        </div>
+        <div>
+            {% if patient.is_verified %}
+            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                <i class="fas fa-check-circle"></i> {{ gettext('Verified') }}
+            </span>
+            {% else %}
+            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                <i class="fas fa-clock"></i> {{ gettext('Pending') }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <form method="POST" id="editPatientForm">
+            <!-- Basic Information Section -->
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-address-card text-blue-500 mr-2"></i>{{ gettext('Basic Information') }}
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Full Name -->
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-user text-blue-500 mr-2"></i>{{ gettext('Full Name') }} <span
+                                class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" value="{{ patient.name }}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <!-- Age -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>{{ gettext('Age') }}
+                        </label>
+                        <input type="number" name="age" value="{{ patient.age if patient.age else '' }}" min="0"
+                            max="150"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <!-- بعد حقل Age أو Phone -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-venus-mars text-blue-500 mr-2"></i>{{ gettext('Gender') }}
+                        </label>
+                        <select name="gender"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">{{ gettext('Select Gender') }}</option>
+                            <option value="Male" {% if patient.gender=='Male' %}selected{% endif %}>{{ gettext('Male')
+                                }}</option>
+                            <option value="Female" {% if patient.gender=='Female' %}selected{% endif %}>{{
+                                gettext('Female') }}</option>
+                        </select>
+                    </div>
+                    <!-- Phone -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-phone text-blue-500 mr-2"></i>{{ gettext('Phone') }}
+                        </label>
+                        <input type="tel" name="phone" value="{{ patient.phone or '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-envelope text-blue-500 mr-2"></i>{{ gettext('Email Address') }}
+                        </label>
+                        <input type="email" name="email" value="{{ patient.email or '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <p class="text-xs text-gray-400 mt-1">{{ gettext('Email is required for account access') }}</p>
+                    </div>
+
+                    <!-- SSN (Read Only) -->
+                    <div class="col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-id-card text-blue-500 mr-2"></i>{{ gettext('Social Security Number (SSN)')
+                            }}
+                        </label>
+                        <input type="text" value="{{ patient.ssn or '-' }}" disabled
+                            class="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed">
+                        <p class="text-xs text-gray-400 mt-1">{{ gettext('SSN cannot be changed after creation') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Information Section -->
+            <div class="p-6 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-notes-medical text-blue-500 mr-2"></i>{{ gettext('Medical Information') }}
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Blood Type -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-tint text-blue-500 mr-2"></i>{{ gettext('Blood Type') }}
+                        </label>
+                        <select name="blood_type"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">{{ gettext('Select Blood Type') }}</option>
+                            <option value="A+" {% if patient.blood_type=='A+' %}selected{% endif %}>A+</option>
+                            <option value="A-" {% if patient.blood_type=='A-' %}selected{% endif %}>A-</option>
+                            <option value="B+" {% if patient.blood_type=='B+' %}selected{% endif %}>B+</option>
+                            <option value="B-" {% if patient.blood_type=='B-' %}selected{% endif %}>B-</option>
+                            <option value="AB+" {% if patient.blood_type=='AB+' %}selected{% endif %}>AB+</option>
+                            <option value="AB-" {% if patient.blood_type=='AB-' %}selected{% endif %}>AB-</option>
+                            <option value="O+" {% if patient.blood_type=='O+' %}selected{% endif %}>O+</option>
+                            <option value="O-" {% if patient.blood_type=='O-' %}selected{% endif %}>O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Allergies -->
+                <div class="mt-4">
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-allergies text-blue-500 mr-2"></i>{{ gettext('Allergies') }}
+                    </label>
+                    <textarea name="allergies" rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="{{ gettext('e.g., Penicillin, Peanuts, Latex') }}">{{ patient.allergies or '' }}</textarea>
+                </div>
+
+                <!-- Chronic Conditions -->
+                <div class="mt-4">
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-heartbeat text-blue-500 mr-2"></i>{{ gettext('Chronic Conditions') }}
+                    </label>
+                    <textarea name="chronic_conditions" rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="{{ gettext('e.g., Hypertension, Diabetes, Asthma') }}">{{ patient.chronic_conditions or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Emergency Contact Section -->
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-ambulance text-blue-500 mr-2"></i>{{ gettext('Emergency Contact') }}
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-user-friends text-blue-500 mr-2"></i>{{ gettext('Contact Name') }}
+                        </label>
+                        <input type="text" name="emergency_contact" value="{{ patient.emergency_contact_name or '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('Full name of emergency contact') }}">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-phone-alt text-blue-500 mr-2"></i>{{ gettext('Contact Phone') }}
+                        </label>
+                        <input type="tel" name="emergency_phone" value="{{ patient.emergency_contact_phone or '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="{{ gettext('Emergency phone number') }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="p-6 bg-gray-50 flex justify-end gap-3">
+                <a href="{{ url_for('doctor.patient_reports', patient_id=patient.id) }}"
+                    class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                    <i class="fas fa-times mr-2"></i>{{ gettext('Cancel') }}
+                </a>
+                <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-save mr-2"></i>{{ gettext('Save Changes') }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Danger Zone (Delete Patient) -->
+    <div class="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h3 class="font-semibold text-red-800">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <p class="text-sm text-red-600">{{ gettext('Remove this patient from your list') }}</p>
+                </h3>
+            </div>
+            <form method="POST" action="{{ url_for('doctor.remove_patient', patient_id=patient.id) }}"
+                onsubmit="return confirm('{{ gettext('Are you sure you want to remove this patient from your list?') }}')">
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-trash-alt mr-2"></i>{{ gettext('Remove Patient') }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Form validation before submit
+    const form = document.getElementById('editPatientForm');
+
+    form.addEventListener('submit', function (e) {
+        const name = document.querySelector('input[name="name"]').value.trim();
+
+        if (!name) {
+            e.preventDefault();
+            alert('{{ gettext("Patient name is required") }}');
+            return false;
+        }
+
+        return true;
+    });
+</script>
+{% endblock %}
