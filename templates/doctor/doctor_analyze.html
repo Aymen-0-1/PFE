@@ -208,6 +208,7 @@
     }
 
     // ==================== analyzeReports Function ====================
+    // ==================== analyzeReports Function ====================
     async function analyzeReports(imageFiles, patientId = null) {
         if (!imageFiles || imageFiles.length === 0) {
             alert("{{ gettext('Please select at least one file') }}");
@@ -224,7 +225,6 @@
 
         for (let i = 0; i < imageFiles.length; i++) {
             const file = imageFiles[i];
-
             analysisStatus.textContent = `📤 Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
 
             const formData = new FormData();
@@ -242,6 +242,8 @@
                 }
 
                 const ocrData = await ocrResponse.json();
+                console.log(`OCR text for ${file.name}:`, ocrData.text);
+
                 allText += `\n\n--- Page ${i + 1}: ${file.name} ---\n${ocrData.text}\n`;
                 imagePaths.push(ocrData.image_path);
                 successCount++;
@@ -257,85 +259,148 @@
             return;
         }
 
+        console.log("=== ALL EXTRACTED TEXT ===");
+        console.log(allText);
+        console.log("=== END ===");
+
+        if (allText.trim().length < 10) {
+            analysisStatus.textContent = "❌ Could not extract enough text. Please use clearer images.";
+            analysisStatus.className = "status-message error";
+            return;
+        }
+
         analysisStatus.textContent = `🔍 Analyzing ${successCount} images with AI...`;
 
-        const prompt = `Extract medical information from this complete medical report and return JSON.
+        const prompt = `Analyze this medical text. Return ONLY a valid JSON object with exactly these fields. Do NOT add any explanations, markdown formatting, or extra text.
 
-Medical Report:
-${allText.substring(0, 4000)}
+{"conditions":[],"medications":[],"alerts":[],"summary":""}
 
-Return exactly this format:
-{
-"conditions": [],
-"medications": [],
-"alerts": [],
-"summary": ""
-}`;
+Rules:
+- conditions: list of diseases or symptoms (max 5 items)
+- medications: list of drugs or treatments (max 5 items)
+- alerts: list of warnings (max 3 items)
+- summary: one short sentence (max 15 words)
+
+Text: ${allText.substring(0, 2000)}
+
+JSON:`;
 
         try {
             const aiResponse = await puter.ai.chat(prompt);
+            console.log("AI Response:", aiResponse);
 
-            let analysis;
-            try {
-                let content;
-                if (aiResponse.message && aiResponse.message.content) {
+            // ✅ الجزء المصحح - استخراج النص بشكل آمن
+            let content = null;
+
+            if (aiResponse.message?.content) {
+                if (typeof aiResponse.message.content === 'string') {
                     content = aiResponse.message.content;
-                } else if (aiResponse.content) {
-                    content = aiResponse.content;
-                } else if (typeof aiResponse === 'string') {
-                    content = aiResponse;
+                } else if (Array.isArray(aiResponse.message.content)) {
+                    const textParts = aiResponse.message.content
+                        .filter(item => item.type === 'text')
+                        .map(item => item.text)
+                        .join(' ');
+                    content = textParts;
                 } else {
-                    content = JSON.stringify(aiResponse);
+                    content = JSON.stringify(aiResponse.message.content);
                 }
-
-                let cleanContent = content.trim();
-                if (cleanContent.startsWith('```json')) {
-                    cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-                } else if (cleanContent.startsWith('```')) {
-                    cleanContent = cleanContent.replace(/```\n?/g, '');
+            } else if (aiResponse.content) {
+                if (typeof aiResponse.content === 'string') {
+                    content = aiResponse.content;
+                } else if (Array.isArray(aiResponse.content)) {
+                    const textParts = aiResponse.content
+                        .filter(item => item.type === 'text')
+                        .map(item => item.text)
+                        .join(' ');
+                    content = textParts;
+                } else {
+                    content = JSON.stringify(aiResponse.content);
                 }
+            } else if (typeof aiResponse === 'string') {
+                content = aiResponse;
+            } else {
+                content = JSON.stringify(aiResponse);
+            }
 
-                analysis = JSON.parse(cleanContent);
-                analysis.conditions = analysis.conditions || [];
-                analysis.medications = analysis.medications || [];
-                analysis.alerts = analysis.alerts || [];
-                analysis.summary = analysis.summary || "No summary provided";
+            // ✅ التأكد من أن content هو نص
+            if (typeof content !== 'string') {
+                content = String(content);
+            }
 
-            } catch (e) {
-                console.log("Parse error, using fallback:", e);
+            console.log("Content type:", typeof content);
+            console.log("Content (first 200 chars):", content.substring(0, 200));
+
+            // ✅ تنظيف النص
+            let cleanContent = content.trim();
+            cleanContent = cleanContent.replace(/```json\n?/g, '');
+            cleanContent = cleanContent.replace(/```\n?/g, '');
+            cleanContent = cleanContent.trim();
+
+            // ✅ استخراج JSON
+            let analysis = null;
+            const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+
+            if (jsonMatch) {
+                try {
+                    analysis = JSON.parse(jsonMatch[0]);
+                    console.log("JSON parsed:", analysis);
+                } catch (e) {
+                    console.warn("JSON parse failed:", e);
+                }
+            }
+
+            if (!analysis) {
                 analysis = {
-                    summary: "Analysis completed. Please consult a doctor for accurate interpretation.",
                     conditions: [],
                     medications: [],
-                    alerts: []
+                    alerts: [],
+                    summary: cleanContent.substring(0, 500)
                 };
             }
 
-            // Display results in table
+            // ✅ التأكد من الحقول
+            analysis.conditions = Array.isArray(analysis.conditions) ? analysis.conditions : [];
+            analysis.medications = Array.isArray(analysis.medications) ? analysis.medications : [];
+            analysis.alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
+
+            if (typeof analysis.summary !== 'string') {
+                try {
+                    analysis.summary = JSON.stringify(analysis.summary);
+                } catch (e) {
+                    analysis.summary = "Analysis complete";
+                }
+            }
+            if (!analysis.summary || analysis.summary === '') {
+                analysis.summary = "Analysis complete";
+            }
+
+            console.log("Final analysis:", analysis);
+
+            // ✅ عرض النتائج
             const currentDate = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             });
 
-            const conditionsList = analysis.conditions?.length > 0
-                ? `<ul class="list-disc list-inside">${analysis.conditions.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>`
-                : '<span class="text-gray-400">{{ gettext("None identified") }}</span>';
+            const conditionsHtml = analysis.conditions.length > 0
+                ? analysis.conditions.map(c => `• ${escapeHtml(c)}`).join('<br>')
+                : '<span class="text-gray-400">-</span>';
 
-            const medicationsList = analysis.medications?.length > 0
-                ? `<ul class="list-disc list-inside">${analysis.medications.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
-                : '<span class="text-gray-400">{{ gettext("None identified") }}</span>';
+            const medicationsHtml = analysis.medications.length > 0
+                ? analysis.medications.map(m => `• ${escapeHtml(m)}`).join('<br>')
+                : '<span class="text-gray-400">-</span>';
 
-            const alertsList = analysis.alerts?.length > 0
-                ? `<ul class="list-disc list-inside">${analysis.alerts.map(a => `<li class="text-yellow-700">⚠️ ${escapeHtml(a)}</li>`).join('')}</ul>`
-                : '<span class="text-green-600"><i class="fas fa-check-circle"></i> {{ gettext("No alerts") }}</span>';
+            const alertsHtml = analysis.alerts.length > 0
+                ? analysis.alerts.map(a => `⚠️ ${escapeHtml(a)}`).join('<br>')
+                : '<span class="text-green-600">✓ No alerts</span>';
 
             resultTableBody.innerHTML = `
             <tr class="border-b hover:bg-gray-50">
                 <td class="px-3 py-3 font-medium">${currentDate}</td>
-                <td class="px-3 py-3">${conditionsList}</td>
-                <td class="px-3 py-3">${medicationsList}</td>
-                <td class="px-3 py-3">${alertsList}</td>
+                <td class="px-3 py-3">${conditionsHtml}</td>
+                <td class="px-3 py-3">${medicationsHtml}</td>
+                <td class="px-3 py-3">${alertsHtml}</td>
                 <td class="px-3 py-3">${escapeHtml(analysis.summary)}</td>
             </tr>
         `;
@@ -343,38 +408,30 @@ Return exactly this format:
             analysisStatus.textContent = "✅ Analysis complete!";
             analysisStatus.className = "status-message success";
 
-            // Save to database if patientId is provided
+            // حفظ التقرير (للمستخدمين المسجلين فقط)
             if (patientId && imagePaths.length > 0) {
                 try {
-                    const saveResponse = await fetch("/report/save-report", {
+                    await fetch("/report/save-report", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             patient_id: patientId,
                             image_paths: imagePaths,
-                            conditions: analysis.conditions || [],
-                            medications: analysis.medications || [],
-                            alerts: analysis.alerts || [],
-                            summary: analysis.summary || "Analysis complete"
+                            conditions: analysis.conditions,
+                            medications: analysis.medications,
+                            alerts: analysis.alerts,
+                            summary: analysis.summary
                         })
                     });
-
-                    if (saveResponse.ok) {
-                        console.log("Report saved successfully");
-                    }
+                    console.log("Report saved successfully");
                 } catch (e) {
                     console.error("Save error:", e);
                 }
             }
 
-            // Show action buttons
             actionButtons.style.display = 'flex';
-
-            // Store for save button
             window.lastAnalysis = analysis;
             window.lastImagePaths = imagePaths;
-
-            return analysis;
 
         } catch (error) {
             console.error("Error:", error);

@@ -463,72 +463,72 @@
      * Display compact AI results (with Font Awesome icons)
      */
     function displayCompactAnalysis(analysis, patient, medicationsInfo, isElderly) {
-        // Build alerts HTML
-        let alertsHtml = `
-    <div class="p-2 bg-blue-50 text-blue-700 text-sm mb-3 rounded-lg flex items-center gap-2">
-        <i class="fas fa-robot text-blue-500"></i>
-        <span>${escapeHtml(analysis.summary || 'AI analysis completed')}</span>
-    </div>
-`;
-
-        let dosageHtml = '';
-
-        for (const med of analysis.medications) {
-            const safeIcon = med.is_safe !== false ? 'fa-check-circle' : 'fa-exclamation-triangle';
-            const safeColor = med.is_safe !== false ? 'text-green-600' : 'text-red-600';
-            const bgColor = med.is_safe !== false ? 'bg-green-50' : 'bg-red-50';
-            const borderColor = med.is_safe !== false ? 'border-green-200' : 'border-red-200';
-
-            alertsHtml += `
-        <div class="mb-2 p-2 rounded-lg ${bgColor} border ${borderColor}">
-            <div class="flex items-start gap-2">
-                <i class="fas ${safeIcon} ${safeColor} mt-0.5"></i>
-                <div class="flex-1">
-                    <span class="font-medium">${escapeHtml(med.name)}</span>
-                    <span class="text-gray-600 text-sm ml-2">
-                        <i class="fas fa-capsules text-blue-500 mr-1"></i>
-                        ${escapeHtml(med.recommended_dosage || 'Standard dose')}
-                    </span>
-                    <p class="text-gray-500 text-xs mt-1">
-                        <i class="fas fa-info-circle text-gray-400 mr-1"></i>
-                        ${escapeHtml(med.reasoning || '')}
-                    </p>
-                </div>
+        // ========== 1. AI Drug Interaction Analysis (التفاعلات فقط) ==========
+        if (DOM.alertsContent) {
+            let alertsHtml = `
+            <div class="p-2 bg-blue-50 text-blue-700 text-sm mb-3 rounded-lg flex items-center gap-2">
+                <i class="fas fa-robot text-blue-500"></i>
+                <span>${escapeHtml(analysis.summary || 'Analysis complete')}</span>
             </div>
-        </div>
-    `;
+        `;
 
-            dosageHtml += `
-        <tr class="border-b hover:bg-gray-50">
-            <td class="px-2 py-2 text-sm">
-                <i class="fas fa-pills text-blue-400 mr-1"></i>
-                ${escapeHtml(med.name)}
-            </td>
-            <td class="px-2 py-2 text-sm">${escapeHtml(med.recommended_dosage || '-')}</td>
-            <td class="px-2 py-2 text-sm">-</td>
-            <td class="px-2 py-2 text-sm">
-                <span class="px-2 py-0.5 rounded-full text-xs ${med.is_safe !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                    <i class="fas ${med.is_safe !== false ? 'fa-check' : 'fa-exclamation'} mr-1"></i>
-                    ${med.is_safe !== false ? 'Safe' : 'Caution'}
-                </span>
-            </td>
-            <td class="px-2 py-2 text-xs text-gray-500">${escapeHtml((med.reasoning || '').substring(0, 50))}</td>
-        </tr>
-    `;
+            // عرض التفاعلات فقط (بدون جرعات)
+            if (analysis.interactions && analysis.interactions.length > 0) {
+                alertsHtml += `<div class="mt-2"><strong>⚠️ Drug Interactions:</strong></div>`;
+                for (const interaction of analysis.interactions) {
+                    const severityColor = interaction.severity === 'high' ? 'red' : (interaction.severity === 'medium' ? 'yellow' : 'blue');
+                    alertsHtml += `
+                    <div class="mb-2 p-2 border border-${severityColor}-200 rounded-lg bg-${severityColor}-50">
+                        <p class="text-sm font-medium">⚠️ ${escapeHtml(interaction.description)}</p>
+                        <p class="text-xs text-gray-600 mt-1">💡 ${escapeHtml(interaction.recommendation || 'Monitor closely')}</p>
+                    </div>
+                `;
+                }
+            } else {
+                alertsHtml += `
+                <div class="mt-2 p-2 bg-green-50 text-green-700 rounded-lg text-sm">
+                    <i class="fas fa-check-circle mr-1"></i> No drug interactions detected
+                </div>
+            `;
+            }
+
+            DOM.alertsContent.innerHTML = alertsHtml;
         }
 
-        if (DOM.alertsContent) DOM.alertsContent.innerHTML = alertsHtml;
-        if (DOM.dosageTableBody) DOM.dosageTableBody.innerHTML = dosageHtml || '<tr><td colspan="5" class="text-center text-gray-400"><i class="fas fa-chart-line"></i> No data</td></tr>';
-        if (DOM.dosageSummary) {
+        // ========== 2. Dosage Analysis (الجرعات فقط) ==========
+        if (DOM.dosageTableBody && DOM.dosageSummary) {
+            let dosageHtml = '';
+
+            for (const med of analysis.medications) {
+                dosageHtml += `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-2 py-2 text-sm font-medium">
+                        <i class="fas fa-pills text-blue-400 mr-1"></i>
+                        ${escapeHtml(med.name)}
+                    </td>
+                    <td class="px-2 py-2 text-sm">${escapeHtml(med.recommended_dosage || '-')}</td>
+                    <td class="px-2 py-2 text-sm">-</td>
+                    <td class="px-2 py-2">
+                        <span class="px-2 py-0.5 rounded-full text-xs ${med.is_safe !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            <i class="fas ${med.is_safe !== false ? 'fa-check' : 'fa-exclamation'} mr-1"></i>
+                            ${med.is_safe !== false ? 'Safe' : 'Caution'}
+                        </span>
+                    </td>
+                    <td class="px-2 py-2 text-xs text-gray-500">${escapeHtml(med.reasoning || '').substring(0, 60)}</td>
+                <tr>
+            `;
+            }
+
+            DOM.dosageTableBody.innerHTML = dosageHtml || '<tr><td colspan="5" class="text-center text-gray-400"><i class="fas fa-chart-line"></i> No data</td></tr>';
+
             DOM.dosageSummary.innerHTML = `
-        <div class="p-2 bg-green-50 text-green-700 rounded-lg flex items-center gap-2">
-            <i class="fas fa-chart-simple"></i>
-            <span class="text-sm">Analysis complete</span>
-        </div>
-    `;
+            <div class="p-2 bg-green-50 text-green-700 rounded-lg flex items-center gap-2">
+                <i class="fas fa-chart-simple"></i>
+                <span class="text-sm">Recommended Dosages</span>
+            </div>
+        `;
         }
     }
-
     /**
      * Display fallback analysis (no AI)
      */
@@ -620,55 +620,97 @@
             const isChild = age < 18;
 
             // Build medication list for prompt
-            const medList = medicationsInfo.map(m => `- ${m.name}`).join('\n');
+            const medList = medicationsInfo.map(m => `- ${m.name} (${m.requested_dosage || 'dose not specified'})`).join('\n');
 
-            let ageNote = '';
-            if (isElderly) ageNote = 'Elderly patient - reduce dose by 50%.';
-            if (isChild) ageNote = 'Child patient - use weight-based dosing.';
+            let specialNote = '';
+            if (isElderly) specialNote = 'PATIENT IS ELDERLY (65+): Reduce all dosages by 50%.';
+            if (isChild) specialNote = 'PATIENT IS A CHILD: Use weight-based dosing.';
 
             // Build AI prompt
-            const prompt = `Clinical pharmacist. ${ageNote} Patient ${age}y. Allergies: ${patient.allergies || 'none'}. Medications: ${medList}
+            const prompt = `You are a clinical pharmacist. ${specialNote}
 
-Return ONLY valid JSON (short answers, max 15 words per field):
+MEDICATIONS:
+${medList}
+
+PATIENT:
+- Age: ${age} years
+- Gender: ${patient.gender || 'Not specified'}
+- Allergies: ${patient.allergies || 'None'}
+- Chronic conditions: ${patient.chronic_conditions || 'None'}
+
+Return ONLY valid JSON. No extra text, no markdown.
 {
-"medications": [
-    {
-        "name": "",
-        "is_safe": true,
-        "recommended_dosage": "",
-        "reasoning": ""
-    }
-],
-"summary": ""
+    "medications": [
+        {
+            "name": "",
+            "is_safe": true,
+            "severity": "low",
+            "recommended_dosage": "",
+            "reasoning": ""
+        }
+    ],
+    "interactions": [],
+    "summary": ""
 }`;
 
             // Call Puter AI
             const aiResponse = await puter.ai.chat(prompt);
+            console.log("AI Response:", aiResponse);
 
-            let responseText = aiResponse.message?.content || aiResponse.content || JSON.stringify(aiResponse);
+            // ✅ استخراج النص بشكل صحيح (مطابق لـ home.html)
+            let responseText = '';
 
-            // Extract JSON from response
-            let jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (typeof aiResponse === 'string') {
+                responseText = aiResponse;
+            } else if (aiResponse && typeof aiResponse === 'object') {
+                if (aiResponse.message?.content) {
+                    if (Array.isArray(aiResponse.message.content)) {
+                        const textParts = aiResponse.message.content
+                            .filter(item => item.type === 'text')
+                            .map(item => item.text)
+                            .join(' ');
+                        responseText = textParts;
+                    } else if (typeof aiResponse.message.content === 'string') {
+                        responseText = aiResponse.message.content;
+                    } else {
+                        responseText = JSON.stringify(aiResponse.message.content);
+                    }
+                } else if (aiResponse.content) {
+                    responseText = aiResponse.content;
+                } else {
+                    responseText = JSON.stringify(aiResponse);
+                }
+            }
+
+            if (typeof responseText !== 'string') {
+                responseText = String(responseText);
+            }
+
+            console.log("Response text:", responseText);
+
+            // ✅ استخراج JSON
             let analysis = null;
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
             if (jsonMatch) {
                 try {
                     analysis = JSON.parse(jsonMatch[0]);
+                    console.log("JSON parsed:", analysis);
                 } catch (e) {
-                    console.log("JSON parse failed, using fallback");
+                    console.warn("JSON parse failed:", e);
                 }
             }
 
-            // Display results based on AI success
+            // ✅ عرض النتائج بناءً على نجاح AI
             if (analysis && analysis.medications && analysis.medications.length > 0) {
                 displayCompactAnalysis(analysis, patient, medicationsInfo, isElderly);
             } else {
+                console.log("No valid analysis, using fallback");
                 displayFallbackAnalysis(medicationsInfo, patient, isElderly, age);
             }
 
         } catch (error) {
-            // Silent fallback - never show errors to user
-            console.log("Using fallback analysis:", error);
+            console.log("Error in AI analysis:", error);
 
             try {
                 const fallbackResponse = await fetch(`/prescription/api/analyze-prescription/${patientId}`, {
@@ -686,22 +728,20 @@ Return ONLY valid JSON (short answers, max 15 words per field):
                     displayFallbackAnalysis(medicationsInfo, patient, isElderly, age);
                 }
             } catch (e) {
-                // Ultimate fallback - empty state
                 if (DOM.alertsContent) {
                     DOM.alertsContent.innerHTML = `
-                <div class="p-6 text-center text-gray-400">
-                    <i class="fas fa-prescription-bottle text-3xl mb-2"></i>
-                    <p class="text-sm">Select medications to see analysis</p>
-                </div>
-            `;
+                    <div class="p-6 text-center text-gray-400">
+                        <i class="fas fa-prescription-bottle text-3xl mb-2"></i>
+                        <p class="text-sm">Select medications to see analysis</p>
+                    </div>
+                `;
                 }
                 if (DOM.dosageTableBody) {
-                    DOM.dosageTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-400"><i class="fas fa-chart-line"></i> Select medications to analyze</td></tr>';
+                    DOM.dosageTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-400">Select medications to analyze</td></tr>';
                 }
             }
         }
     }
-
     // ============================================================================
     // SECTION 6: UI Event Handlers
     // ============================================================================

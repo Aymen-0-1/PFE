@@ -17,7 +17,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @report_bp.route('/<int:report_id>/delete', methods=['POST'])
 @login_required
 def delete_report(report_id):
@@ -78,7 +77,6 @@ def delete_report(report_id):
         flash('Unauthorized access', 'danger')
         return redirect(url_for('home'))
 
-
 @report_bp.route('/ocr', methods=['POST'])
 @login_required
 def ocr():
@@ -113,7 +111,6 @@ def ocr():
     except Exception as e:
         current_app.logger.error(f"OCR Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
 
 @report_bp.route('/save-report', methods=['POST'])
 @login_required
@@ -162,6 +159,40 @@ def save_report():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Save report error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@report_bp.route('/public/ocr', methods=['POST'])
+def public_ocr():
+    """OCR للزوار غير المسجلين - بدون تسجيل دخول"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == "":
+            return jsonify({"error": "No selected file"}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({"error": "File type not allowed"}), 400
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        filename = secure_filename(f"{timestamp}_{file.filename}")
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
+        
+        text = extract_text(file_path)
+        
+        # حذف الملف بعد الاستخدام (اختياري)
+        # os.remove(file_path)
+        
+        return jsonify({
+            "success": True,
+            "text": text,
+            "image_path": filename
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Public OCR Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @report_bp.route('/<int:report_id>/export')

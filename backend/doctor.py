@@ -122,6 +122,7 @@ def add_patient():
         
         name = request.form.get('name', '').strip()
         age = request.form.get('age')
+        gender = request.form.get('gender')
         phone = request.form.get('phone', '').strip()
         ssn = request.form.get('ssn', '').strip()
         email = request.form.get('email', '').strip().lower()
@@ -153,7 +154,7 @@ def add_patient():
             code_expiry = datetime.utcnow() + timedelta(minutes=10)
             
             patient = Patient(
-                name=name, age=age if age else None, phone=phone, 
+                name=name, age=age if age else None, phone=phone, gender=gender,
                 email=email if email else None, ssn=ssn,
                 password=generate_password_hash(password), is_verified=False,
                 verification_code=verification_code, code_expiry=code_expiry
@@ -167,7 +168,7 @@ def add_patient():
             flash(f'Account created for {name}. Verification code sent to {email}', 'success')
         else:
             patient = Patient(
-                name=name, age=age if age else None, phone=phone, 
+                name=name, age=age if age else None, phone=phone, gender=gender,
                 ssn=ssn if ssn else None, email=None, password=None
             )
             db.session.add(patient)

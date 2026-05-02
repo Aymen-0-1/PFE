@@ -73,7 +73,7 @@
         </div>
     </div>
 
-    <!-- Analysis Results - مصغر -->
+    <!-- Analysis Results -->
     <div id="resultsSection" class="hidden bg-white rounded-lg shadow mb-4">
         <div class="border-b px-4 py-2">
             <h2 class="text-md font-bold flex items-center">
@@ -131,19 +131,76 @@
         }
     }
 
-    #imagePreview img {
+    /* تحسين معاينة الصور */
+    #imagePreview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .image-preview-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+    }
+
+    .image-preview-container img {
         width: 80px;
         height: 80px;
         object-fit: cover;
         border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .remove-image-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+
+    .remove-image-btn:hover {
+        background-color: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .status-message.info {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .status-message.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .status-message.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
     }
 </style>
 
 <script>
-    // ===== دالة تحليل التقارير المبسطة =====
+    // ===== دالة تحليل التقارير =====
     async function analyzeReports(imageFiles, patientId = null) {
         const status = document.getElementById("analysisStatus");
-        const resultBox = document.getElementById("analysisResult");
         const loading = document.getElementById("loading");
         const resultsSection = document.getElementById("resultsSection");
 
@@ -152,19 +209,16 @@
             return;
         }
 
-        // إظهار حالة التحميل
         status.style.display = "block";
         status.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
         status.className = "status-message info";
-        if (resultBox) resultBox.style.display = "none";
         if (loading) loading.classList.remove("hidden");
         if (resultsSection) resultsSection.classList.add("hidden");
 
         let allText = "";
         let successCount = 0;
-        let imagePaths = [];
 
-        // معالجة كل صورة
+        // ========== 1. OCR ==========
         for (let i = 0; i < imageFiles.length; i++) {
             const file = imageFiles[i];
             status.textContent = `📤 Processing ${i + 1}/${imageFiles.length}: ${file.name}`;
@@ -173,13 +227,15 @@
             formData.append("file", file);
 
             try {
-                const response = await fetch("/ocr", { method: "POST", body: formData });
+                const response = await fetch("/report/public/ocr", {
+                    method: "POST",
+                    body: formData
+                });
                 const data = await response.json();
 
                 if (data.error) throw new Error(data.error);
 
                 allText += `\n--- Image ${i + 1} ---\n${data.text}\n`;
-                if (data.image_path) imagePaths.push(data.image_path);
                 successCount++;
             } catch (error) {
                 console.error(`Error: ${file.name}`, error);
@@ -193,77 +249,142 @@
             return;
         }
 
-        // تحليل AI
+        // ========== 2. AI Analysis ==========
         status.textContent = `🔍 AI analyzing ${successCount} image(s)...`;
 
-        const prompt = `Extract medical info from this report. Return ONLY valid JSON:
-{
-    "conditions": [],
-    "medications": [],
-    "alerts": [],
-    "summary": ""
-}
+        const prompt = `Analyze this medical text. Return ONLY a valid JSON object with exactly these fields. Do NOT add any explanations, markdown formatting, or extra text.
 
-Text: ${allText.substring(0, 3000)}`;
+{"conditions":[],"medications":[],"alerts":[],"summary":""}
+
+Rules:
+- conditions: list of diseases or symptoms (max 5 items)
+- medications: list of drugs or treatments (max 5 items)
+- alerts: list of warnings (max 3 items)
+- summary: one short sentence (max 15 words)
+
+Text: ${allText.substring(0, 2000)}
+
+JSON:`;
+
 
         try {
             const aiResponse = await puter.ai.chat(prompt);
+            console.log("AI Response:", aiResponse);
 
-            // استخراج JSON من الرد
-            let content = typeof aiResponse === 'string' ? aiResponse : (aiResponse.content || aiResponse.message?.content || JSON.stringify(aiResponse));
-            let cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            let analysis = JSON.parse(cleanContent);
+            // ✅ استخراج النص بشكل صحيح
+            let responseText = '';
 
-            // التأكد من وجود الحقول
-            analysis.conditions = analysis.conditions || [];
-            analysis.medications = analysis.medications || [];
-            analysis.alerts = analysis.alerts || [];
-            analysis.summary = analysis.summary || "Analysis complete";
+            if (typeof aiResponse === 'string') {
+                responseText = aiResponse;
+            } else if (aiResponse && typeof aiResponse === 'object') {
+                // محاولة استخراج من message.content
+                if (aiResponse.message?.content) {
+                    if (Array.isArray(aiResponse.message.content)) {
+                        // المصفوفة: [{type: 'text', text: '...'}]
+                        const textParts = aiResponse.message.content
+                            .filter(item => item.type === 'text')
+                            .map(item => item.text)
+                            .join(' ');
+                        responseText = textParts;
+                    } else if (typeof aiResponse.message.content === 'string') {
+                        responseText = aiResponse.message.content;
+                    } else {
+                        responseText = JSON.stringify(aiResponse.message.content);
+                    }
+                } else if (aiResponse.content) {
+                    responseText = aiResponse.content;
+                } else {
+                    responseText = JSON.stringify(aiResponse);
+                }
+            }
 
-            // عرض النتائج في الجدول
+            if (typeof responseText !== 'string') {
+                responseText = String(responseText);
+            }
+
+            console.log("Response text:", responseText);
+
+            // ✅ استخراج JSON
+            let analysis = null;
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+            if (jsonMatch) {
+                try {
+                    analysis = JSON.parse(jsonMatch[0]);
+                    console.log("JSON parsed:", analysis);
+                } catch (e) {
+                    console.warn("JSON parse failed:", e);
+                }
+            }
+
+            if (!analysis) {
+                // محاولة إنشاء JSON من النص إذا كان بسيطاً
+                analysis = {
+                    conditions: [],
+                    medications: [],
+                    alerts: [],
+                    summary: responseText.substring(0, 500)
+                };
+            }
+
+            // ✅ التأكد من أن الحقول صحيحة
+            analysis.conditions = Array.isArray(analysis.conditions) ? analysis.conditions : [];
+            analysis.medications = Array.isArray(analysis.medications) ? analysis.medications : [];
+            analysis.alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
+
+            // ✅ التأكد من أن summary نص
+            if (typeof analysis.summary !== 'string') {
+                try {
+                    analysis.summary = JSON.stringify(analysis.summary);
+                } catch (e) {
+                    analysis.summary = "Analysis complete";
+                }
+            }
+            if (!analysis.summary || analysis.summary === '') {
+                analysis.summary = "Analysis complete";
+            }
+
+            // ✅ عرض النتائج في الجدول
             const tableBody = document.getElementById("resultTableBody");
             if (tableBody) {
                 const date = new Date().toLocaleDateString();
+
+                const conditionsHtml = analysis.conditions.length > 0
+                    ? analysis.conditions.map(c => `• ${escape(c)}`).join('<br>')
+                    : '-';
+
+                const medicationsHtml = analysis.medications.length > 0
+                    ? analysis.medications.map(m => `• ${escape(m)}`).join('<br>')
+                    : '-';
+
+                const alertsHtml = analysis.alerts.length > 0
+                    ? analysis.alerts.map(a => `⚠️ ${escape(a)}`).join('<br>')
+                    : '-';
+
                 tableBody.innerHTML = `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="px-4 py-3">${date}</td>
-                    <td class="px-4 py-3">${analysis.conditions.map(c => `• ${escape(c)}`).join('<br>') || '-'}</td>
-                    <td class="px-4 py-3">${analysis.medications.map(m => `• ${escape(m)}`).join('<br>') || '-'}</td>
-                    <td class="px-4 py-3">${analysis.alerts.map(a => `⚠️ ${escape(a)}`).join('<br>') || '-'}</td>
+                    <td class="px-4 py-3">${conditionsHtml}</td>
+                    <td class="px-4 py-3">${medicationsHtml}</td>
+                    <td class="px-4 py-3">${alertsHtml}</td>
                     <td class="px-4 py-3">${escape(analysis.summary)}</td>
-                </tr>
+                </table>
             `;
             }
 
-            // حفظ للمستخدمين المسجلين فقط
-            if (patientId && imagePaths.length) {
-                await fetch("/report/save-report", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        patient_id: patientId,
-                        image_paths: imagePaths,
-                        conditions: analysis.conditions,
-                        medications: analysis.medications,
-                        alerts: analysis.alerts,
-                        summary: analysis.summary
-                    })
-                });
-            }
-
-            // إظهار النتائج
             status.innerHTML = "✅ Analysis complete!";
             status.className = "status-message success";
-            if (resultBox) resultBox.style.display = "block";
             if (resultsSection) resultsSection.classList.remove("hidden");
 
         } catch (error) {
-            console.error(error);
-            status.innerHTML = "❌ Analysis failed. Please try again.";
+            console.error("AI analysis error:", error);
+            status.innerHTML = `❌ Analysis failed: ${error.message}`;
             status.className = "status-message error";
         } finally {
             if (loading) loading.classList.add("hidden");
-            setTimeout(() => { if (status) status.style.display = "none"; }, 3000);
+            setTimeout(() => {
+                if (status) status.style.display = "none";
+            }, 5000);
         }
     }
 
@@ -273,7 +394,7 @@ Text: ${allText.substring(0, 3000)}`;
         div.textContent = text;
         return div.innerHTML;
     }
-
+    // ===== ربط النموذج =====
     // ===== ربط النموذج =====
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("quickAnalysisForm");
@@ -283,15 +404,18 @@ Text: ${allText.substring(0, 3000)}`;
 
         let selectedFiles = [];
 
-        // اختيار الملفات
         document.getElementById("selectFilesBtn")?.addEventListener("click", () => fileInput.click());
 
-        // السحب والإفلات
         const dropzone = document.getElementById("dropzone");
         if (dropzone) {
             dropzone.addEventListener("click", () => fileInput.click());
-            dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("border-blue-500", "bg-blue-50"); });
-            dropzone.addEventListener("dragleave", () => dropzone.classList.remove("border-blue-500", "bg-blue-50"));
+            dropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropzone.classList.add("border-blue-500", "bg-blue-50");
+            });
+            dropzone.addEventListener("dragleave", () => {
+                dropzone.classList.remove("border-blue-500", "bg-blue-50");
+            });
             dropzone.addEventListener("drop", (e) => {
                 e.preventDefault();
                 dropzone.classList.remove("border-blue-500", "bg-blue-50");
@@ -309,10 +433,13 @@ Text: ${allText.substring(0, 3000)}`;
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const div = document.createElement("div");
-                    div.className = "relative";
+                    div.className = "image-preview-container";
+                    div.setAttribute("data-filename", file.name);
                     div.innerHTML = `
-                    <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg">
-                    <button type="button" onclick="this.parentElement.remove(); removeFile('${file.name}')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs">×</button>
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <button type="button" class="remove-image-btn" onclick="removeImage('${file.name.replace(/'/g, "\\'")}')">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
                 `;
                     preview.appendChild(div);
                 };
@@ -322,8 +449,10 @@ Text: ${allText.substring(0, 3000)}`;
             updateFileInput();
         }
 
-        window.removeFile = (name) => {
+        window.removeImage = (name) => {
             selectedFiles = selectedFiles.filter(f => f.name !== name);
+            const container = document.querySelector(`.image-preview-container[data-filename="${name.replace(/'/g, "\\'")}"]`);
+            if (container) container.remove();
             analyzeBtn.disabled = selectedFiles.length === 0;
             updateFileInput();
         };
@@ -334,7 +463,6 @@ Text: ${allText.substring(0, 3000)}`;
             fileInput.files = dt.files;
         }
 
-        // إرسال النموذج
         form?.addEventListener("submit", (e) => {
             e.preventDefault();
             if (selectedFiles.length) analyzeReports(selectedFiles, null);
