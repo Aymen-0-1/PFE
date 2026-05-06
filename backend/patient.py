@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, current_app, json
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 
@@ -81,6 +81,50 @@ def patient_dashboard():
                          all_alerts=all_alerts,
                          datetime=datetime)
 
+@patient_bp.route('/analyze-report')
+@login_required
+def analyze_my_report():
+    """صفحة تحليل التقرير للمريض"""
+    if session.get('user_role') != 'patient':
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('home'))
+    
+    patient = Patient.query.get(current_user.id)
+    
+    return render_template('patient/patient_analyze.html', patient=patient)
+
+
+@patient_bp.route('/api/analyze-report', methods=['POST'])
+@login_required
+def api_analyze_my_report():
+    """API لتحليل وحفظ تقرير المريض"""
+    if session.get('user_role') != 'patient':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        data = request.get_json()
+        patient_id = current_user.id
+        
+        report = MedicalReport(
+            patient_id=patient_id,
+            doctor_id=None,  # المريض رفعه بنفسه، لا يوجد طبيب
+            conditions=json.dumps(data.get('conditions', [])),
+            medications=json.dumps(data.get('medications', [])),
+            alerts=json.dumps(data.get('alerts', [])),
+            summary=data.get('summary', '')
+        )
+        
+        image_paths = data.get('image_paths', [])
+        report.set_image_paths(image_paths)
+        
+        db.session.add(report)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'id': report.id})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @patient_bp.route('/reports')
 @login_required

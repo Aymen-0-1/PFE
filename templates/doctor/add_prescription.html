@@ -654,7 +654,11 @@ Return ONLY valid JSON. No extra text, no markdown.
 }`;
 
             // Call Puter AI
-            const aiResponse = await puter.ai.chat(prompt);
+            //const aiResponse = await puter.ai.chat(prompt);
+            const aiResponse = await puter.ai.chat(prompt, {
+                model: 'claude-haiku-4-5-20251001'  // أو 'gpt-4o' أو 'gemini-2.5-flash-lite'
+            });
+
             console.log("AI Response:", aiResponse);
 
             // ✅ استخراج النص بشكل صحيح (مطابق لـ home.html)
