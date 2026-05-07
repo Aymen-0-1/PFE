@@ -424,10 +424,9 @@
                                 <p class="text-xs text-gray-500">{{ item.doctor.specialty.name_en if
                                     item.doctor.specialty else gettext('General Practitioner') }}</p>
                             </div>
-                            <a href="{{ url_for('patient.patient_reports_by_doctor', doctor_id=item.doctor.id) }}"
-                                class="text-blue-600 hover:text-blue-800 text-sm">
-                                <i class="fas fa-file-alt mr-1"></i>{{ gettext('Reports') }} ({{ item.reports_count }})
-                            </a>
+                            <span class="text-xs text-gray-400">
+                                <i class="fas fa-file-alt mr-1"></i>{{ item.reports_count }} {{ gettext('reports') }}
+                            </span>
                         </div>
                         {% endfor %}
                     </div>

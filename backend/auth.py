@@ -6,7 +6,7 @@ import random
 import string
 import re
 
-from backend.database import Notification, db, Doctor, Patient, Commune, Specialty
+from backend.database import MedicalReport, Notification, db, Doctor, Patient, Commune, Specialty
 from backend.extensions import mail
 from flask_mail import Message
 
@@ -540,12 +540,35 @@ def profile():
     
     communes = Commune.query.all() if session.get('user_role') == 'doctor' else []
     specialties = Specialty.query.all() if session.get('user_role') == 'doctor' else []
-    
+
+    doctors = []
+    if session.get('user_role') == 'patient':
+        patient = Patient.query.get(current_user.id)
+        if patient:
+            print(f"Patient ID: {patient.id}")
+            print(f"Doctors count: {patient.doctors.count()}")
+            for doctor in patient.doctors:
+                print(f"Doctor found: {doctor.name}")
+            doctors_data = []
+            for doctor in patient.doctors:
+                # ✅ حساب كل التقارير (بدون تصفية حسب doctor_id)
+                reports_count = MedicalReport.query.filter_by(
+                    patient_id=patient.id
+                ).count()
+
+                doctors_data.append({
+                    'doctor': doctor,
+                    'reports_count': reports_count
+                })
+            doctors = doctors_data
+            print(f"Doctors data: {doctors}")
+
     return render_template('profile.html', 
                          show_header=True, 
                          user=current_user,
                          communes=communes,
-                         specialties=specialties)
+                         specialties=specialties,
+                         doctors=doctors)
 
 @auth_bp.route('/profile/delete', methods=['POST'])
 @login_required

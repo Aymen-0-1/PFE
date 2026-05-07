@@ -16,15 +16,48 @@
     <script src="https://cdn.jsdelivr.net/npm/puter-js@latest/dist/puter.js"></script>
 
 
+    <style>
+        /* منع السكرول على الصفحة بأكملها */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* المحتوى الرئيسي فقط هو الذي يسكرول */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            /* ✅ أضف هذا */
+
+        }
+
+        /* السايدبار ثابت ولا يسكرول */
+        .sidebar {
+            overflow-y: visible !important;
+            height: calc(100vh - 60px);
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="flex flex-col min-h-screen">
 
     <!-- Header - يظهر فقط عندما show_header = True -->
     {% if show_header %}
-    <header class="sticky top-0 z-50">
+    <header class="sticky top-0 z-50" style="height: 60px;">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
                 <!-- Logo -->
@@ -142,11 +175,12 @@
     {% endif %}
 
     <!-- Main Container -->
-    <div class="flex">
+    <div class="flex flex-1 min-h-0" style="height: calc(100vh - 72px);">
         <!-- Sidebar - يظهر فقط للمستخدمين المسجلين وعند show_header = True -->
         {% if current_user.is_authenticated and show_header %}
-        <aside id="sidebar" class="sidebar sidebar-hidden md:block w-64 shadow-lg min-h-screen fixed md:relative z-40">
-            <div class="p-4">
+        <aside id="sidebar" class="sidebar sidebar-hidden md:block w-64 shadow-lg flex-shrink-0 md:relative z-40"
+            style="position: sticky; top: 72px; height: calc(100vh - 60px);">
+            <div class="p-4 flex flex-col h-full">
                 <!-- User info -->
                 <div class="text-center mb-6 pb-3 border-b">
                     <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto bg-white/20">
@@ -163,7 +197,7 @@
                 </div>
 
                 <!-- Navigation -->
-                <nav class="space-y-1">
+                <nav class="space-y-1 flex-1">
                     {% if session.get('user_role') == 'doctor' %}
                     <a href="{{ url_for('doctor.doctor_dashboard') }}"
                         class="nav-link flex items-center space-x-3 p-3 rounded-lg transition {% if request.endpoint == 'doctor.doctor_dashboard' %}active{% endif %}">
@@ -208,7 +242,7 @@
                 </nav>
 
                 <!-- Sidebar Footer -->
-                <div class="absolute bottom-0 left-0 right-0 p-4 text-center text-xs border-t">
+                <div class="sidebar-footer p-4 text-center text-xs border-t mt-auto">
                     <i class="far fa-copyright"></i> 2026 {{ gettext('AI-Powered Medic') }}
                 </div>
             </div>
@@ -216,7 +250,7 @@
         {% endif %}
 
         <!-- Main Content -->
-        <main class="flex-1 p-6">
+        <main class="flex-1 overflow-y-auto p-6 main-content" style="flex: 1; min-height: 0;">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -256,26 +290,29 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-
+    <!-- Footer - يظهر فقط للصفحات العامة -->
+    <!-- Footer - يظهر فقط للصفحات العامة -->
     <!-- Footer - يظهر فقط للصفحات العامة -->
     {% if show_header and not current_user.is_authenticated %}
-    <footer class="no-print">
-        <div class="max-w-7xl mx-auto px-4 py-6">
-            <div class="flex flex-col md:flex-row justify-between items-center text-sm">
-                <div class="mb-3 md:mb-0">
+    <footer class="no-print w-full -mx-6"
+        style="width: calc(100% + 3rem); margin-left: -1.5rem; margin-right: -1.5rem;">
+        <div class="px-6 py-3">
+            <div class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+                <div class="mb-2 md:mb-0">
                     <i class="far fa-copyright"></i> 2026 {{ gettext('AI-Powered Medic') }} - {{ gettext('All rights
                     reserved') }}
                 </div>
-                <div class="flex space-x-4">
-                    <a href="#" class="hover:text-white transition">{{ gettext('About') }}</a>
-                    <a href="#" class="hover:text-white transition">{{ gettext('Privacy') }}</a>
-                    <a href="#" class="hover:text-white transition">{{ gettext('Terms') }}</a>
-                    <a href="#" class="hover:text-white transition">{{ gettext('Help') }}</a>
+                <div class="flex space-x-5">
+                    <a href="#" class="hover:text-gray-700 transition">{{ gettext('About') }}</a>
+                    <a href="#" class="hover:text-gray-700 transition">{{ gettext('Privacy') }}</a>
+                    <a href="#" class="hover:text-gray-700 transition">{{ gettext('Terms') }}</a>
+                    <a href="#" class="hover:text-gray-700 transition">{{ gettext('Help') }}</a>
                 </div>
             </div>
         </div>
     </footer>
     {% endif %}
+
 
     <!-- ===== THEN CUSTOM JS ===== -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
