@@ -612,7 +612,7 @@ translations = {
         'Search Filters': 'Filtres de recherche',
         'Patient Name': 'Nom du patient',
         'SSN': 'NSS',
-        'Rx': 'Ordo',
+        'Rx': 'Ordonances',
         'Last Report': 'Dernier rapport',
         'Actions': 'Actions',
         'Verified': 'Vérifié',
