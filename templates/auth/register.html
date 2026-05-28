@@ -133,7 +133,6 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg"
                                 placeholder="{{ gettext('30') }}">
                         </div>
-                        <!-- بعد حقل Age -->
                         {% if session.get('user_role') == 'patient' %}
                         <div>
                             <label class="block text-gray-700 font-medium mb-2">
@@ -192,7 +191,7 @@
                     </div>
                 </div>
 
-                <!-- ==================== STEP 3: Details (Dynamic based on role) ==================== -->
+                <!-- ==================== STEP 3: Details ==================== -->
                 <div id="step3" class="step-content" style="display: none;">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">{{ gettext('Additional Information') }}</h2>
                     <p class="text-gray-500 text-sm mb-6">{{ gettext('Please provide your professional or medical
@@ -352,7 +351,7 @@
                     </div>
                 </div>
 
-                <!-- Navigation Buttons -->
+                <!-- Buttons -->
                 <div class="flex justify-between mt-8">
                     <button type="button" id="prevBtn"
                         class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
@@ -390,15 +389,15 @@
      * ====================================================================
      * 1.  STEPPER CORE VARIABLES (السير المتحكم في الخطوات)
      * 2.  DOM ELEMENTS REFERENCES (مراجع عناصر الصفحة)
-     * 3.  ROLE SELECTION SYSTEM (نظام اختيار نوع الحساب)
-     * 4.  STEP NAVIGATION (التنقل بين الخطوات)
-     * 5.  UI UPDATE FUNCTION (تحديث الواجهة)
-     * 6.  CONFIRM CONTENT GENERATOR (إنشاء محتوى التأكيد)
-     * 7.  VALIDATION FUNCTIONS (دوال التحقق من صحة البيانات)
-     * 8.  HELPER FUNCTIONS (دوال مساعدة)
-     * 9.  PASSWORD VISIBILITY TOGGLE (إظهار/إخفاء كلمة المرور)
-     * 10. FIND DOCTORS FOR PATIENTS (البحث عن الأطباء للمرضى)
-     * 11. FORM SUBMISSION (إرسال النموذج)
+     * 3.  ROLE SELECTION SYSTEM 
+     * 4.  STEP NAVIGATION 
+     * 5.  UI UPDATE FUNCTION 
+     * 6.  CONFIRM CONTENT GENERATOR 
+     * 7.  VALIDATION FUNCTIONS 
+     * 8.  HELPER FUNCTIONS 
+     * 9.  PASSWORD VISIBILITY TOGGLE 
+     * 10. FIND DOCTORS FOR PATIENTS 
+     * 11. FORM SUBMISSION 
      * ====================================================================
      */
 
@@ -410,7 +409,6 @@
     // ==================== 2. DOM ELEMENTS REFERENCES ====================
     const steps = [1, 2, 3, 4];
 
-    // محتويات الخطوات
     const stepContents = {
         1: document.getElementById('step1'),
         2: document.getElementById('step2'),
@@ -418,7 +416,6 @@
         4: document.getElementById('step4')
     };
 
-    // الدوائر الدالة على الخطوات
     const stepCircles = {
         1: document.querySelector('.step-1'),
         2: document.querySelector('.step-2'),
@@ -426,21 +423,17 @@
         4: document.querySelector('.step-4')
     };
 
-    // الخطوط الفاصلة بين الخطوات
     const stepLines = {
         1: document.querySelector('.step-line-1'),
         2: document.querySelector('.step-line-2'),
         3: document.querySelector('.step-line-3')
     };
 
-    // أزرار التنقل
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const submitBtn = document.getElementById('submitBtn');
 
     // ==================== 3. ROLE SELECTION SYSTEM ====================
-    // ==================== ROLE SELECTION ====================
-    // ==================== ROLE SELECTION ====================
     const cardPatient = document.getElementById('cardPatient');
     const cardDoctor = document.getElementById('cardDoctor');
     const patientSelected = document.getElementById('patientSelected');
@@ -451,15 +444,12 @@
         selectedRole = role;
         roleInput.value = role;
 
-        // ✅ إخفاء الـ Selected من الكل أولاً
         patientSelected.classList.add('hidden');
         doctorSelected.classList.add('hidden');
 
-        // ✅ إزالة border من الكل
         cardPatient.classList.remove('border-blue-500', 'bg-blue-50');
         cardDoctor.classList.remove('border-blue-500', 'bg-blue-50');
 
-        // ✅ إظهار الـ Selected على الكارد المختار فقط
         if (role === 'patient') {
             cardPatient.classList.add('border-blue-500', 'bg-blue-50');
             patientSelected.classList.remove('hidden');
@@ -468,7 +458,6 @@
             doctorSelected.classList.remove('hidden');
         }
 
-        // تفعيل زر Next
         nextBtn.disabled = false;
         nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
@@ -477,18 +466,15 @@
         selectedRole = null;
         roleInput.value = '';
 
-        // ✅ إعادة تعيين الكل
         cardPatient.classList.remove('border-blue-500', 'bg-blue-50');
         cardDoctor.classList.remove('border-blue-500', 'bg-blue-50');
         patientSelected.classList.add('hidden');
         doctorSelected.classList.add('hidden');
 
-        // تعطيل زر Next
         nextBtn.disabled = true;
         nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
 
-    // ربط الأحداث
     cardPatient.addEventListener('click', () => selectRole('patient'));
     cardDoctor.addEventListener('click', () => selectRole('doctor'));
 
@@ -711,7 +697,6 @@
 
     // ==================== 8. HELPER FUNCTIONS ====================
     /**
-     * تحويل النص إلى نص آمن لمنع هجمات XSS
      * @param {string} text - النص الأصلي
      * @returns {string} النص الآمن
      */

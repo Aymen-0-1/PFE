@@ -198,7 +198,7 @@
 </style>
 
 <script>
-    // ===== دالة تحليل التقارير =====
+    // ===== analyzeReports =====
     async function analyzeReports(imageFiles, patientId = null) {
         const status = document.getElementById("analysisStatus");
         const loading = document.getElementById("loading");
@@ -210,7 +210,7 @@
         }
 
         status.style.display = "block";
-        status.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
+        status.textContent = ` Processing ${imageFiles.length} image(s)...`;
         status.className = "status-message info";
         if (loading) loading.classList.remove("hidden");
         if (resultsSection) resultsSection.classList.add("hidden");
@@ -221,7 +221,7 @@
         // ========== 1. OCR ==========
         for (let i = 0; i < imageFiles.length; i++) {
             const file = imageFiles[i];
-            status.textContent = `📤 Processing ${i + 1}/${imageFiles.length}: ${file.name}`;
+            status.textContent = ` Processing ${i + 1}/${imageFiles.length}: ${file.name}`;
 
             const formData = new FormData();
             formData.append("file", file);
@@ -274,7 +274,6 @@ JSON:`;
             });
             console.log("AI Response:", aiResponse);
 
-            // ✅ استخراج النص بشكل صحيح
             let responseText = '';
 
             if (typeof aiResponse === 'string') {
@@ -307,7 +306,7 @@ JSON:`;
 
             console.log("Response text:", responseText);
 
-            // ✅ استخراج JSON
+            // JSON
             let analysis = null;
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
@@ -330,12 +329,12 @@ JSON:`;
                 };
             }
 
-            // ✅ التأكد من أن الحقول صحيحة
+            //  التأكد من أن الحقول صحيحة
             analysis.conditions = Array.isArray(analysis.conditions) ? analysis.conditions : [];
             analysis.medications = Array.isArray(analysis.medications) ? analysis.medications : [];
             analysis.alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
 
-            // ✅ التأكد من أن summary نص
+            //  التأكد من أن summary نص
             if (typeof analysis.summary !== 'string') {
                 try {
                     analysis.summary = JSON.stringify(analysis.summary);
@@ -347,7 +346,7 @@ JSON:`;
                 analysis.summary = "Analysis complete";
             }
 
-            // ✅ عرض النتائج في الجدول
+            //  عرض النتائج في الجدول
             const tableBody = document.getElementById("resultTableBody");
             if (tableBody) {
                 const date = new Date().toLocaleDateString();
@@ -397,7 +396,6 @@ JSON:`;
         div.textContent = text;
         return div.innerHTML;
     }
-    // ===== ربط النموذج =====
     // ===== ربط النموذج =====
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById("quickAnalysisForm");

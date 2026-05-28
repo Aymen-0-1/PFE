@@ -208,7 +208,6 @@
     }
 
     // ==================== analyzeReports Function ====================
-    // ==================== analyzeReports Function ====================
     async function analyzeReports(imageFiles, patientId = null) {
         if (!imageFiles || imageFiles.length === 0) {
             alert("{{ gettext('Please select at least one file') }}");
@@ -216,7 +215,7 @@
         }
 
         analysisStatus.style.display = "block";
-        analysisStatus.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
+        analysisStatus.textContent = ` Processing ${imageFiles.length} image(s)...`;
         analysisStatus.className = "status-message info";
 
         let allText = "";
@@ -225,7 +224,7 @@
 
         for (let i = 0; i < imageFiles.length; i++) {
             const file = imageFiles[i];
-            analysisStatus.textContent = `📤 Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
+            analysisStatus.textContent = ` Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
 
             const formData = new FormData();
             formData.append("file", file);
@@ -292,7 +291,6 @@ JSON:`;
             });
             console.log("AI Response:", aiResponse);
 
-            // ✅ الجزء المصحح - استخراج النص بشكل آمن
             let content = null;
 
             if (aiResponse.message?.content) {
@@ -325,7 +323,6 @@ JSON:`;
                 content = JSON.stringify(aiResponse);
             }
 
-            // ✅ التأكد من أن content هو نص
             if (typeof content !== 'string') {
                 content = String(content);
             }
@@ -333,13 +330,12 @@ JSON:`;
             console.log("Content type:", typeof content);
             console.log("Content (first 200 chars):", content.substring(0, 200));
 
-            // ✅ تنظيف النص
             let cleanContent = content.trim();
             cleanContent = cleanContent.replace(/```json\n?/g, '');
             cleanContent = cleanContent.replace(/```\n?/g, '');
             cleanContent = cleanContent.trim();
 
-            // ✅ استخراج JSON
+            //  JSON
             let analysis = null;
             const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
 
@@ -361,7 +357,7 @@ JSON:`;
                 };
             }
 
-            // ✅ التأكد من الحقول
+            // التأكد من الحقول
             analysis.conditions = Array.isArray(analysis.conditions) ? analysis.conditions : [];
             analysis.medications = Array.isArray(analysis.medications) ? analysis.medications : [];
             analysis.alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
@@ -379,7 +375,7 @@ JSON:`;
 
             console.log("Final analysis:", analysis);
 
-            // ✅ عرض النتائج
+            // عرض النتائج
             const currentDate = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
@@ -411,7 +407,6 @@ JSON:`;
             analysisStatus.textContent = "✅ Analysis complete!";
             analysisStatus.className = "status-message success";
 
-            // حفظ التقرير (للمستخدمين المسجلين فقط)
             if (patientId && imagePaths.length > 0) {
                 try {
                     await fetch("/report/save-report", {

@@ -87,20 +87,18 @@
             <input type="text" name="email" placeholder="{{ gettext('Email') }}"
                 value="{{ request.args.get('email', '') }}"
                 class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-            <!-- إضافة فلتر حسب حالة التفعيل -->
+
             <select name="verified" class="px-3 py-2 border rounded-lg">
                 <option value="">{{ gettext('All') }}</option>
                 <option value="verified">{{ gettext('Verified') }}</option>
                 <option value="pending">{{ gettext('Pending') }}</option>
             </select>
 
-            <!-- إضافة فلتر حسب التاريخ -->
             <input type="date" name="date_from" placeholder="{{ gettext('From Date') }}"
                 value="{{ request.args.get('date_from', '') }}" class="px-3 py-2 border rounded-lg">
             <input type="date" name="date_to" placeholder="{{ gettext('To Date') }}"
                 value="{{ request.args.get('date_to', '') }}" class="px-3 py-2 border rounded-lg">
 
-            <!-- إضافة خيارات الترتيب -->
             <select name="sort" class="px-3 py-2 border rounded-lg">
                 <option value="name_asc">{{ gettext('Name A-Z') }}</option>
                 <option value="name_desc">{{ gettext('Name Z-A') }}</option>

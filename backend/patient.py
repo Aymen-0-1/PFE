@@ -183,19 +183,14 @@ def patient_prescriptions():
         flash('Unauthorized access', 'danger')
         return redirect(url_for('home'))
     
-    # جلب جميع الوصفات
     prescriptions = Prescription.query.filter_by(patient_id=current_user.id)\
                        .order_by(Prescription.created_at.desc()).all()
     
-    # حساب الإحصائيات بناءً على created_at
     today = datetime.utcnow()
     active_count = 0
     expired_count = 0
     
     for p in prescriptions:
-        # الوصفة تعتبر منتهية إذا:
-        # 1. is_active = False (ألغاها الطبيب)
-        # 2. أو مضى عليها أكثر من 30 يوماً (تاريخ الإنشاء)
         if not p.is_active or (p.created_at < today - timedelta(days=30)):
             expired_count += 1
         else:

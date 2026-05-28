@@ -29,7 +29,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <!-- Left Column: Upload Section -->
+        <!-- Upload Section -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="bg-gradient-to-r from-blue-600 to-teal-500 px-5 py-3">
                 <h2 class="text-white font-semibold">
@@ -43,7 +43,7 @@
                     class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
                     <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-3"></i>
                     <p class="text-gray-600 font-medium">{{ gettext('Drag & Drop your medical images here') }}</p>
-                    <p class="text-sm text-gray-500 mt-1">{{ gettext('PNG, JPG, JPEG, GIF (Multiple images allowed)') }}
+                    <p class="text-sm text-gray-500 mt-1">{{ gettext('PNG, JPG, JPEG, (Multiple images allowed)') }}
                     </p>
                     <input type="file" id="quickReportImage" multiple accept="image/*" class="hidden">
                     <button type="button" id="selectFilesBtn"
@@ -68,7 +68,7 @@
             </div>
         </div>
 
-        <!-- Right Column: Results Section -->
+        <!-- Results Section -->
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="bg-gradient-to-r from-green-600 to-teal-500 px-5 py-3">
                 <h2 class="text-white font-semibold">
@@ -214,7 +214,6 @@
     }
 
     // ==================== analyzeReports Function ====================
-    // ==================== analyzeReports Function ====================
     async function analyzeReports(imageFiles, patientId = null) {
         if (!imageFiles || imageFiles.length === 0) {
             alert("{{ gettext('Please select at least one file') }}");
@@ -222,7 +221,7 @@
         }
 
         analysisStatus.style.display = "block";
-        analysisStatus.textContent = `📤 Processing ${imageFiles.length} image(s)...`;
+        analysisStatus.textContent = ` Processing ${imageFiles.length} image(s)...`;
         analysisStatus.className = "status-message info";
 
         let allText = "";
@@ -231,7 +230,7 @@
 
         for (let i = 0; i < imageFiles.length; i++) {
             const file = imageFiles[i];
-            analysisStatus.textContent = `📤 Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
+            analysisStatus.textContent = ` Processing image ${i + 1} of ${imageFiles.length}: ${file.name}`;
 
             const formData = new FormData();
             formData.append("file", file);
@@ -298,7 +297,6 @@ JSON:`;
             });
             console.log("AI Response:", aiResponse);
 
-            // ✅ الجزء المصحح - استخراج النص بشكل آمن
             let content = null;
 
             if (aiResponse.message?.content) {
@@ -331,7 +329,6 @@ JSON:`;
                 content = JSON.stringify(aiResponse);
             }
 
-            // ✅ التأكد من أن content هو نص
             if (typeof content !== 'string') {
                 content = String(content);
             }
@@ -339,13 +336,13 @@ JSON:`;
             console.log("Content type:", typeof content);
             console.log("Content (first 200 chars):", content.substring(0, 200));
 
-            // ✅ تنظيف النص
+            // clean text
             let cleanContent = content.trim();
             cleanContent = cleanContent.replace(/```json\n?/g, '');
             cleanContent = cleanContent.replace(/```\n?/g, '');
             cleanContent = cleanContent.trim();
 
-            // ✅ استخراج JSON
+            // extract JSON
             let analysis = null;
             const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
 
@@ -367,7 +364,6 @@ JSON:`;
                 };
             }
 
-            // ✅ التأكد من الحقول
             analysis.conditions = Array.isArray(analysis.conditions) ? analysis.conditions : [];
             analysis.medications = Array.isArray(analysis.medications) ? analysis.medications : [];
             analysis.alerts = Array.isArray(analysis.alerts) ? analysis.alerts : [];
@@ -385,7 +381,7 @@ JSON:`;
 
             console.log("Final analysis:", analysis);
 
-            // ✅ عرض النتائج
+            // show results
             const currentDate = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
@@ -417,7 +413,6 @@ JSON:`;
             analysisStatus.textContent = "✅ Analysis complete!";
             analysisStatus.className = "status-message success";
 
-            // حفظ التقرير (للمستخدمين المسجلين فقط)
             if (patientId && imagePaths.length > 0) {
                 try {
                     await fetch("/patient/api/analyze-report", {

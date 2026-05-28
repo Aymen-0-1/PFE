@@ -17,7 +17,6 @@
 
 
     <style>
-        /* منع السكرول على الصفحة بأكملها */
         html,
         body {
             height: 100%;
@@ -35,16 +34,12 @@
             overflow: hidden;
         }
 
-        /* المحتوى الرئيسي فقط هو الذي يسكرول */
         .main-content {
             flex: 1;
             overflow-y: auto;
             min-height: 0;
-            /* ✅ أضف هذا */
-
         }
 
-        /* السايدبار ثابت ولا يسكرول */
         .sidebar {
             overflow-y: visible !important;
             height: calc(100vh - 60px);
@@ -96,7 +91,7 @@
                     <a href="{{ url_for('auth.register') }}" class="px-4 py-2 rounded-lg">{{ gettext('Register') }}</a>
                 </div>
                 {% else %}
-                <!-- Right side - للمستخدمين المسجلين -->
+                <!-- Right side -->
                 <div class="flex items-center space-x-4">
                     <!-- Language Switcher -->
                     <div class="relative">
@@ -290,9 +285,7 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-    <!-- Footer - يظهر فقط للصفحات العامة -->
-    <!-- Footer - يظهر فقط للصفحات العامة -->
-    <!-- Footer - يظهر فقط للصفحات العامة -->
+    <!-- Footer -->
     {% if show_header and not current_user.is_authenticated %}
     <footer class="no-print w-full -mx-6"
         style="width: calc(100% + 3rem); margin-left: -1.5rem; margin-right: -1.5rem;">
@@ -314,7 +307,7 @@
     {% endif %}
 
 
-    <!-- ===== THEN CUSTOM JS ===== -->
+    <!-- ===== JS ===== -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
     {% block extra_js %}{% endblock %}

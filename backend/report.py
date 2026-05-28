@@ -182,9 +182,6 @@ def public_ocr():
         
         text = extract_text(file_path)
         
-        # حذف الملف بعد الاستخدام (اختياري)
-        # os.remove(file_path)
-        
         return jsonify({
             "success": True,
             "text": text,

@@ -231,7 +231,6 @@
                             class="text-blue-600 hover:text-blue-800 transition" title="{{ gettext('View') }}">
                             <i class="fas fa-eye text-lg"></i>
                         </a>
-                        <!-- في قسم Prescriptions Section، قم بتعديل رابط الطباعة -->
                         <a href="javascript:void(0)" onclick="printPrescription({{ prescription.id }})"
                             class="text-gray-600 hover:text-gray-800 transition" title="{{ gettext('Print') }}">
                             <i class="fas fa-print text-lg"></i>
@@ -316,7 +315,6 @@
                 ? `<ul class="list-disc list-inside">${report.alerts.map(a => `<li class="text-yellow-700">⚠️ ${escapeHtml(a)}</li>`).join('')}</ul>`
                 : '<span class="text-green-600">✓ {{ gettext("No alerts") }}</span>';
 
-            // ✅ جلب مسارات الصور
             let imagePaths = [];
             if (report.image_paths) {
                 try {
@@ -329,7 +327,6 @@
                 }
             }
 
-            // ✅ إنشاء HTML لعرض الصور مع المسار الصحيح
             let imagesHtml = '';
             if (imagePaths.length > 0) {
                 imagesHtml = `
@@ -409,8 +406,6 @@
     }
     // Image Modal for fullscreen view
     let fullscreenModal = null;
-
-    // دالة عرض الصورة في المودال المنبثق
     function openImageModal(imagePath) {
         if (!fullscreenModal) {
             fullscreenModal = document.createElement('div');
@@ -459,10 +454,8 @@
 
     // ==================== PRINT PRESCRIPTION FUNCTION ====================
     function printPrescription(prescriptionId) {
-        // فتح نافذة جديدة لعرض الوصفة ثم طباعتها مباشرة
         const printWindow = window.open(`/prescription/${prescriptionId}/view`, '_blank');
 
-        // انتظر حتى تحميل الصفحة ثم اطبع
         printWindow.onload = function () {
             setTimeout(() => {
                 printWindow.print();
